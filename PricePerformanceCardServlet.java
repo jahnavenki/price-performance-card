@@ -84,11 +84,11 @@ public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
         for (int i = 0; i < jsonArray.length(); i++) {
             JSONObject jsonObject = jsonArray.getJSONObject(i);
             String key = jsonObject.getString("key");
-            String displayTxt = jsonObject.getString("displayTxt");
+            String value = jsonObject.getString("value");
 
             ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
             valueMap.put("value", key);
-            valueMap.put("text", displayTxt);
+            valueMap.put("text", value);
             resourceList.add(new ValueMapResource(request.getResourceResolver(), new ResourceMetadata(), "nt:unstructured", valueMap));
         }
 
