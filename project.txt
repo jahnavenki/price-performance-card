@@ -240,12 +240,16 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
 import com.adobe.granite.ui.components.ds.ValueMapResource;
+import com.day.crx.JcrConstants;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.osgi.framework.Constants;
@@ -253,16 +257,15 @@ import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
 import javax.servlet.Servlet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 @Component(service = Servlet.class, property = {
         Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
@@ -273,65 +276,69 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
 
+    transient ResourceResolver resourceResolver;
+    transient Resource pathResource;
+    transient ValueMap valueMap;
+    transient List<Resource> resourceList;
+
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 
-        ResourceResolver resourceResolver = request.getResourceResolver();
+        resourceResolver = request.getResourceResolver();
+        pathResource = request.getResource();
+        resourceList = new ArrayList<>();
 
         try {
-            // Get the dialog resource path
-            String dialogPath = "/path/to/dialog/resource";
-            Resource dialogResource = resourceResolver.getResource(dialogPath);
-            if (dialogResource != null) {
-                // Get the properties from the dialog resource
-                ValueMap properties = dialogResource.getValueMap();
-                String companyCode = properties.get("companyCode", String.class);
-                String api = properties.get("api", String.class);
+            // Retain existing code to retrieve JSON data from AEM content node
+            String jsonDataPath = Objects.requireNonNull(pathResource.getChild("datasource")).getValueMap().get("jsonDataPath", String.class);
+            assert jsonDataPath != null;
+            Resource jsonResource = request.getResourceResolver().getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
+            assert jsonResource != null;
+            Node jsonNode = jsonResource.adaptTo(Node.class);
+            assert jsonNode != null;
 
-                // Set the companyCode and api as request attributes
-                request.setAttribute("companyCode", companyCode);
-                request.setAttribute("api", api);
+            // Read JSON data from the node
+            InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
 
-                // Read the JSON data
-                InputStream inputStream = getClass().getResourceAsStream("/path/to/json/file.json");
-                String jsonData = convertInputStreamToString(inputStream);
+            StringBuilder stringBuilder = new StringBuilder();
+            String eachLine;
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-                // Parse the JSON data
-                JSONObject jsonObject = new JSONObject(jsonData);
-
-                // Convert mainGroup JSONObject to a list of resources
-                List<Resource> resourceList = new ArrayList<>();
-                JSONObject mainGroup = jsonObject.optJSONObject("mainGroup");
-                if (mainGroup != null) {
-                    Iterator<String> keys = mainGroup.keys();
-                    while (keys.hasNext()) {
-                        String key = keys.next();
-                        String value = mainGroup.getString(key);
-                        HashMap<String, Object> map = new HashMap<>();
-                        map.put("value", key);
-                        map.put("text", value);
-                        resourceList.add(new ValueMapResource(resourceResolver, map, "nt:unstructured"));
-                    }
-                }
-
-                // Create a DataSource that is used to populate the drop-down control
-                DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-                request.setAttribute(DataSource.class.getName(), dataSource);
+            while ((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
             }
-        } catch (IOException | JSONException e) {
-            LOGGER.error("Error in JSON Data Exporting: {}", e.getMessage());
-        }
-    }
 
-    private String convertInputStreamToString(InputStream inputStream) throws IOException {
-        StringBuilder stringBuilder = new StringBuilder();
-        String eachLine;
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-        while ((eachLine = bufferedReader.readLine()) != null) {
-            stringBuilder.append(eachLine);
+            // Parse JSON string to JSONObject
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+
+            // Extract companyCode and api values
+            String companyCode = jsonObject.getString("companyCode");
+            String api = jsonObject.getString("api");
+
+            // Set companyCode and api values as request attributes
+            request.setAttribute("companyCode", companyCode);
+            request.setAttribute("api", api);
+
+            // Extract and parse mainGroup JSON object
+            JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
+            Iterator<String> jsonKeys = mainGroupJson.keys();
+
+            while (jsonKeys.hasNext()) {
+                String jsonKey = jsonKeys.next();
+                String jsonValue = mainGroupJson.getString(jsonKey);
+
+                valueMap = new ValueMapDecorator(new HashMap<>());
+                valueMap.put("value", jsonKey);
+                valueMap.put("text", jsonValue);
+                resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
+            }
+
+            // Create a DataSource that is used to populate the drop-down control
+            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), dataSource);
+
+        } catch (JSONException | IOException | RepositoryException e) {
+            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
         }
-        return stringBuilder.toString();
     }
 }
-
-
