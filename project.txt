@@ -1,5 +1,6 @@
 /content/dam/cfs-winged/fpjson/pricenperformance/PricePerformanceCardRequest.json
 /apps/cfs-winged/components/content/dynamicfundperformance/cq:dialog/content/items/column/items/mainGroup/datasource
+/apps/cfs-winged/components/content/pricePerformanceCard/cq:dialog
 ..................................................................
 {
     "companyCode": "001",
