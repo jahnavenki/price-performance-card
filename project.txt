@@ -138,5 +138,93 @@ public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
     }
 }
 
+.................................................
+package au.com.cfs.winged.servlets;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.framework.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.Servlet;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+@Component(service = Servlet.class, property = {
+        Constants.SERVICE_DESCRIPTION + "= JSON Data in Dynamic Dropdown",
+        "sling.servlet.paths=" + "/bin/cfs/PricePerformanceCardRequest.json",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+})
+public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PricePerformanceCardServlet.class);
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        Resource resource = request.getResource();
+
+        try {
+            // Read the JSON file
+            InputStream inputStream = resource.adaptTo(InputStream.class);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+
+            // Parse JSON
+            JsonElement jsonElement = JsonParser.parseString(stringBuilder.toString());
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+
+            // Set company code and API as request attributes
+            String companyCode = jsonObject.get("companyCode").getAsString();
+            String api = jsonObject.get("api").getAsString();
+            request.setAttribute("companyCode", companyCode);
+            request.setAttribute("api", api);
+
+            // Populate dropdown data
+            Map<String, String> mainGroup = parseJsonMap(jsonObject.getAsJsonObject("mainGroup"));
+            Map<String, String> products = parseJsonMap(jsonObject.getAsJsonObject("products"));
+            Map<String, String> years = parseJsonMap(jsonObject.getAsJsonObject("years"));
+
+            // Set dropdown data as request attributes
+            request.setAttribute("mainGroup", mainGroup);
+            request.setAttribute("products", products);
+            request.setAttribute("years", years);
+
+            // Write the JSON content as response
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write(jsonObject.toString());
+
+        } catch (IOException | IllegalStateException | JsonParseException e) {
+            LOGGER.error("Error processing JSON data: {}", e.getMessage(), e);
+            response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private Map<String, String> parseJsonMap(JsonObject jsonObject) {
+        Map<String, String> map = new LinkedHashMap<>();
+        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+            map.put(entry.getKey(), entry.getValue().getAsString());
+        }
+        return map;
+    }
+}
 
 
