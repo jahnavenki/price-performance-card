@@ -4,40 +4,34 @@
 {
     "companyCode": "001",
     "api": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance",
-    "mainGroup": [
-       {
-		  "SF": "Super",
-		  "RF": "Pension",
-		  "IF": "Investments",
-		  "WF": "Institutional & master trust"
-       }
-    ],
-    "products": [
-        {
-            "11": "FirstChoice Wholesale Personal Super",
-            "65": "FirstChoice Employer Super",
-			"51": "FirstChoice Wholesale Pension",
-			"91": "FirstChoice Wholesale Investments",
-			"70": "FirstChoice Investments",
-			"90": "Managed Investment Funds",
-			"91,73,120": "Institutional & master trust"
-        },
-     
-    ],
-    "years": [
-       { 
-            "oneYea": "1 year",
-			"twoYear": "2 years",
-			"threeYears": "3 years",
-			"fourYears": "4 years",
-			"fiveYears": "5 years",
-			"sevenYears": "7 years",
-			"tenYears": "10 years",
-			"sinceInception": "Since inception"
-            
-        },
-   ]
-} 
+    "mainGroup": {
+        "SF": "Super",
+        "RF": "Pension",
+        "IF": "Investments",
+        "WF": "Institutional & master trust"
+    },
+    "products": {
+        "11": "FirstChoice Wholesale Personal Super",
+        "65": "FirstChoice Employer Super",
+        "51": "FirstChoice Wholesale Pension",
+        "91": "FirstChoice Wholesale Investments",
+        "70": "FirstChoice Investments",
+        "90": "Managed Investment Funds",
+        "91,73,120": "Institutional & master trust"
+    },
+    "years": {
+        "oneYear": "1 year",
+        "twoYears": "2 years",
+        "threeYears": "3 years",
+        "fourYears": "4 years",
+        "fiveYears": "5 years",
+        "sevenYears": "7 years",
+        "tenYears": "10 years",
+        "sinceInception": "Since inception"
+    }
+}
+
+
 ....................................................................
 package au.com.cfs.winged.servlets;
 
@@ -54,7 +48,6 @@ import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
 import org.json.JSONObject;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
@@ -72,68 +65,61 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Component(service = Servlet.class, property = {
-Constants.SERVICE_DESCRIPTION + "= JSON Data in Dynamic Dropdown",
-"sling.servlet.paths=" + "/bin/cfs/PricePerformanceCardRequest.json",
-"sling.servlet.methods=" + HttpConstants.METHOD_GET
+        Constants.SERVICE_DESCRIPTION + "= JSON Data in Dynamic Dropdown",
+        "sling.servlet.paths=" + "/bin/cfs/PricePerformanceCardRequest.json",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET
 })
 public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PricePerformanceCardServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PricePerformanceCardServlet.class);
 
-	transient ResourceResolver resourceResolver;
-	transient Resource pathResource;
-	transient ValueMap valueMap;
-	transient List<Resource> resourceList;
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        ResourceResolver resourceResolver = request.getResourceResolver();
+        Resource pathResource = request.getResource();
 
-	@Override
-	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        try {
+            // Fetching the JSON data path from the datasource
+            String jsonDataPath = Objects.requireNonNull(pathResource.getValueMap().get("fpjsonPath", String.class));
+            Resource jsonResource = resourceResolver.getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
+            if (jsonResource == null) {
+                throw new IOException("JSON resource not found at path: " + jsonDataPath);
+            }
 
-		resourceResolver = request.getResourceResolver();
-		pathResource = request.getResource();
-		resourceList = new ArrayList<>();
+            Node jsonNode = jsonResource.adaptTo(Node.class);
+            InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-		try {
-			/* Getting AEM Tags Path given on datasource Node */
-			String jsonDataPath = Objects.requireNonNull(pathResource.getChild("datasource")).getValueMap().get("jsonDataPath", String.class);
-			assert jsonDataPath != null;
-			//Getting Tag Resource using JsonData
-			Resource jsonResource = request.getResourceResolver().getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
-			assert jsonResource != null;
-			//Getting Node from jsonResource
-			Node jsonNode = jsonResource.adaptTo(Node.class);
-			assert jsonNode != null;
-			//Converting input stream to JSON Object
-			InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
+            StringBuilder stringBuilder = new StringBuilder();
+            String eachLine;
+            while ((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
+            }
 
-			StringBuilder stringBuilder = new StringBuilder();
-			String eachLine;
-			assert inputStream != null;
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
 
-			while ((eachLine = bufferedReader.readLine()) != null) {
-				stringBuilder.append(eachLine);
-			}
+            String dropdownAttribute = request.getResource().getValueMap().get("attributeName", String.class);
+            if (dropdownAttribute == null) {
+                throw new JSONException("Dropdown attribute name is missing in the resource.");
+            }
 
-			JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-			Iterator<String> jsonKeys = jsonObject.keys();
-			//Iterating JSON Objects over key
-			while (jsonKeys.hasNext()) {
-				String jsonKey = jsonKeys.next();
-				String jsonValue = jsonObject.getString(jsonKey);
+            JSONObject attributeData = jsonObject.getJSONObject(dropdownAttribute);
+            List<Resource> resourceList = new ArrayList<>();
 
-				valueMap = new ValueMapDecorator(new HashMap<>());
-				valueMap.put("value", jsonKey);
-				valueMap.put("text", jsonValue);
-				resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-			}
+            for (String key : attributeData.keySet()) {
+                ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
+                valueMap.put("value", key);
+                valueMap.put("text", attributeData.getString(key));
+                resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
+            }
 
-			/*Create a DataSource that is used to populate the drop-down control*/
-			DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-			request.setAttribute(DataSource.class.getName(), dataSource);
+            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), dataSource);
 
-		} catch (JSONException | IOException | RepositoryException e) {
-			LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-		}
-	}
+        } catch (Exception e) {
+            LOGGER.error("Error in JSON Data Exporting: {}", e.getMessage(), e);
+        }
+    }
 }
+
 
