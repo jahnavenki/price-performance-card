@@ -39,7 +39,6 @@ import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
 import com.adobe.granite.ui.components.ds.ValueMapResource;
 import com.day.crx.JcrConstants;
-import com.google.gson.*;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
@@ -49,6 +48,8 @@ import org.apache.sling.api.resource.ValueMap;
 import org.apache.sling.api.servlets.HttpConstants;
 import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.slf4j.Logger;
@@ -64,167 +65,174 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@Component(service = Servlet.class, property = {
-        Constants.SERVICE_DESCRIPTION + "= JSON Data in Dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/cfs/PricePerformanceCardRequest.json",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+/**
+	* @author Shiv
+	*/
+@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
+"sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET
 })
-public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
+public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PricePerformanceCardServlet.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
 
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-        ResourceResolver resourceResolver = request.getResourceResolver();
-        Resource pathResource = request.getResource();
+	transient ResourceResolver resourceResolver;
+	transient Resource pathResource;
+	transient ValueMap valueMap;
+	transient List<Resource> resourceList;
 
-        try {
-            // Fetching the JSON data path from the dialog's fpjsonPath property
-            String jsonDataPath = Objects.requireNonNull(pathResource.getValueMap().get("fpjsonPath", String.class));
-            Resource jsonResource = resourceResolver.getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
-            if (jsonResource == null) {
-                throw new IOException("JSON resource not found at path: " + jsonDataPath);
-            }
+	@Override
+	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 
-            Node jsonNode = jsonResource.adaptTo(Node.class);
-            InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+		resourceResolver = request.getResourceResolver();
+		pathResource = request.getResource();
+		resourceList = new ArrayList<>();
 
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
+		try {
+			/* Getting AEM Tags Path given on datasource Node */
+			String jsonDataPath = Objects.requireNonNull(pathResource.getChild("datasource")).getValueMap().get("jsonDataPath", String.class);
+			assert jsonDataPath != null;
+			//Getting Tag Resource using JsonData
+			Resource jsonResource = request.getResourceResolver().getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
+			assert jsonResource != null;
+			//Getting Node from jsonResource
+			Node jsonNode = jsonResource.adaptTo(Node.class);
+			assert jsonNode != null;
+			//Converting input stream to JSON Object
+			InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
 
-            // Parsing JSON using Gson
-            Gson gson = new Gson();
-            JsonObject jsonObject = gson.fromJson(stringBuilder.toString(), JsonObject.class);
+			StringBuilder stringBuilder = new StringBuilder();
+			String eachLine;
+			assert inputStream != null;
+			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-            // Retrieve companyCode and api values
-            String companyCode = jsonObject.get("companyCode").getAsString();
-            String api = jsonObject.get("api").getAsString();
+			while ((eachLine = bufferedReader.readLine()) != null) {
+				stringBuilder.append(eachLine);
+			}
 
-            // Setting companyCode and api as request attributes
-            request.setAttribute("companyCode", companyCode);
-            request.setAttribute("api", api);
+			JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+			Iterator<String> jsonKeys = jsonObject.keys();
+			//Iterating JSON Objects over key
+			while (jsonKeys.hasNext()) {
+				String jsonKey = jsonKeys.next();
+				String jsonValue = jsonObject.getString(jsonKey);
 
-            // Retrieve the attributeName to determine which dropdown to populate
-            String dropdownAttribute = request.getResource().getValueMap().get("attributeName", String.class);
-            if (dropdownAttribute == null) {
-                throw new JsonParseException("Dropdown attribute name is missing in the resource.");
-            }
+				valueMap = new ValueMapDecorator(new HashMap<>());
+				valueMap.put("value", jsonKey);
+				valueMap.put("text", jsonValue);
+				resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
+			}
 
-            JsonArray attributeDataArray = jsonObject.getAsJsonArray(dropdownAttribute);
-            List<Resource> resourceList = new ArrayList<>();
+			/*Create a DataSource that is used to populate the drop-down control*/
+			DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+			request.setAttribute(DataSource.class.getName(), dataSource);
 
-            for (JsonElement element : attributeDataArray) {
-                JsonObject attributeData = element.getAsJsonObject();
-                Map.Entry<String, JsonElement> entry = attributeData.entrySet().iterator().next();
-                String key = entry.getKey();
-                String value = entry.getValue().getAsString();
-
-                ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
-                valueMap.put("value", key);
-                valueMap.put("text", value);
-                resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-            }
-
-            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), dataSource);
-
-        } catch (Exception e) {
-            LOGGER.error("Error in JSON Data Exporting: {}", e.getMessage(), e);
-        }
-    }
+		} catch (JSONException | IOException | RepositoryException e) {
+			LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
+		}
+	}
 }
 
-.................................................
-package au.com.cfs.winged.servlets;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.framework.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-@Component(service = Servlet.class, property = {
-        Constants.SERVICE_DESCRIPTION + "= JSON Data in Dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/cfs/PricePerformanceCardRequest.json",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
-})
-public class PricePerformanceCardServlet extends SlingSafeMethodsServlet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PricePerformanceCardServlet.class);
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-        Resource resource = request.getResource();
-
-        try {
-            // Read the JSON file
-            InputStream inputStream = resource.adaptTo(InputStream.class);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-
-            // Parse JSON
-            JsonElement jsonElement = JsonParser.parseString(stringBuilder.toString());
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-
-            // Set company code and API as request attributes
-            String companyCode = jsonObject.get("companyCode").getAsString();
-            String api = jsonObject.get("api").getAsString();
-            request.setAttribute("companyCode", companyCode);
-            request.setAttribute("api", api);
-
-            // Populate dropdown data
-            Map<String, String> mainGroup = parseJsonMap(jsonObject.getAsJsonObject("mainGroup"));
-            Map<String, String> products = parseJsonMap(jsonObject.getAsJsonObject("products"));
-            Map<String, String> years = parseJsonMap(jsonObject.getAsJsonObject("years"));
-
-            // Set dropdown data as request attributes
-            request.setAttribute("mainGroup", mainGroup);
-            request.setAttribute("products", products);
-            request.setAttribute("years", years);
-
-            // Write the JSON content as response
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(jsonObject.toString());
-
-        } catch (IOException | IllegalStateException | JsonParseException e) {
-            LOGGER.error("Error processing JSON data: {}", e.getMessage(), e);
-            response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private Map<String, String> parseJsonMap(JsonObject jsonObject) {
-        Map<String, String> map = new LinkedHashMap<>();
-        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-            map.put(entry.getKey(), entry.getValue().getAsString());
-        }
-        return map;
-    }
-}
+...........................................................................................
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+    jcr:primaryType="nt:unstructured"
+    jcr:title="Price Performance"
+    sling:resourceType="cq/gui/components/authoring/dialog">
+    <content
+        jcr:primaryType="nt:unstructured"
+        sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns">
+        <items jcr:primaryType="nt:unstructured">
+            <column
+                jcr:primaryType="nt:unstructured"
+                sling:resourceType="granite/ui/components/coral/foundation/container">
+                <items jcr:primaryType="nt:unstructured">
+                    <layout
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldLabel="Layout"
+                        name="./layout">
+                        <items jcr:primaryType="nt:unstructured">
+                            <vertical
+                                jcr:primaryType="nt:unstructured"
+                                text="Vertical"
+                                value="vertical"/>
+                            <horizontal
+                                jcr:primaryType="nt:unstructured"
+                                text="Horizontal"
+                                value="horizontal"/>
+                        </items>
+                    </layout>
+                    <size
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldLabel="Size"
+                        name="./cardSize">
+                        <items jcr:primaryType="nt:unstructured">
+                            <default
+                                jcr:primaryType="nt:unstructured"
+                                text="Large"
+                                value="large"/>
+                            <small
+                                jcr:primaryType="nt:unstructured"
+                                text="Small"
+                                value="small"/>
+                        </items>
+                    </size>
+                    <companyCode
+                        jcr:primaryType="nt:unstructured"
+                        sling:hideResource="{Boolean}true"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                        name="./companyCode"/>
+                    <api
+                        jcr:primaryType="nt:unstructured"
+                        sling:hideResource="{Boolean}true"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                        name="./api"/>
+                    <mainGroup
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldDescription="Select the main group dropdown"
+                        fieldLabel="Select Main Group"
+                        name="./mainGroup">
+                        <datasource
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="/bin/jsonDataDropdown"
+                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                        <dropdown.json/>
+                    </mainGroup>
+                    <apir
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                        fieldDescription="Author the unique APiR Code to get the net performance figures"
+                        fieldLabel="APiR Code (Enter the unique APIR code)"
+                        name="./apir"
+                        required="{Boolean}true"/>
+                    <imageUrl
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
+                        droppable="{Boolean}true"
+                        fieldDescription="Add a Image from the DAM section for the card"
+                        fieldLabel="Image Path (from DAM)"
+                        name="./imageUrl"
+                        rootPath="/content/dam"/>
+                    <horizontalLine
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/foundation/form/checkbox"
+                        fieldDescription="Add a checkbox"
+                        name="./horizontalLine"
+                        text="Horizontal Line"
+                        value="{Boolean}true"/>
+                    <verticalLine
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/foundation/form/checkbox"
+                        fieldDescription="Add a checkbox"
+                        name="./verticalLine"
+                        text="Vertical Line"
+                        value="{Boolean}true"/>
+                </items>
+            </column>
+        </items>
+    </content>
+</jcr:root>
 
 
