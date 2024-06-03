@@ -44,6 +44,54 @@
                                 value="small"/>
                         </items>
                     </size>
+                    <companyCode
+                        jcr:primaryType="nt:unstructured"
+                        sling:hideResource="{Boolean}true"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                        name="./companyCode"
+                        value="${requestAttributes['compnyCode']}"/>
+                    <api
+                        jcr:primaryType="nt:unstructured"
+                        sling:hideResource="{Boolean}true"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                        name="./api"
+                        value="${requestAttributes['api']}"/>
+                    <mainGroup
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldDescription="Select the main group dropdown"
+                        fieldLabel="Select Main Group"
+                        name="./mainGroup">
+                        <datasource
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="/bin/jsonDataDropdown"
+                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                        <dropdown.json/>
+                    </mainGroup>
+                    <products
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldDescription="Select the main group dropdown"
+                        fieldLabel="Select Product"
+                        name="./products">
+                        <datasource
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="/bin/jsonDataDropdown"
+                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                        <dropdown.json/>
+                    </products>
+                    <years
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                        fieldDescription="Select the main group dropdown"
+                        fieldLabel="Select Year"
+                        name="./years">
+                        <datasource
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="/bin/jsonDataDropdown"
+                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                        <dropdown.json/>
+                    </years>
                     <apir
                         jcr:primaryType="nt:unstructured"
                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
@@ -52,17 +100,17 @@
                         name="./apir"
                         required="{Boolean}true"/>
                     <content
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="cq/gui/components/authoring/dialog/richtext"
-                            fieldLabel="Description"
-                            name="./content"
-                            useFixedInlineToolbar="{Boolean}true">
+                        jcr:primaryType="nt:unstructured"
+                        sling:resourceType="cq/gui/components/authoring/dialog/richtext"
+                        fieldLabel="Description"
+                        name="./content"
+                        useFixedInlineToolbar="{Boolean}true">
                         <rtePlugins
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
                         <uiSettings
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
                     </content>
                     <imageUrl
                         jcr:primaryType="nt:unstructured"
@@ -113,4 +161,3 @@
         </items>
     </content>
 </jcr:root>
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
