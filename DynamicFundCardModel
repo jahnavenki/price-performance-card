@@ -13,10 +13,10 @@ import javax.inject.Inject;
 
 @Model(
 adaptables = SlingHttpServletRequest.class,
-adapters = FundPerformanceModel.class,
+adapters = DynamicFundCardModel.class,
 defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
 )
-public class FundPerformanceModel {
+public class DynamicFundCardModel {
 
 	@ValueMapValue
 	private String layout;
@@ -26,6 +26,9 @@ public class FundPerformanceModel {
 
 	@ValueMapValue
 	private String apir;
+
+	@ValueMapValue
+	private String content;
 
 	@ValueMapValue
 	private String imageUrl;
@@ -49,6 +52,9 @@ public class FundPerformanceModel {
 
 	public String getApir() {
 		return apir;
+	}
+	public String getContent() {
+		return content;
 	}
 
 	public String getImageUrl() {
