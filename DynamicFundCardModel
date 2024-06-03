@@ -70,3 +70,106 @@ public class DynamicFundCardModel {
 	}
 
 }
+....................................
+/*
+		Author Venkat
+*/
+package au.com.cfs.winged.core.models;
+
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.models.annotations.DefaultInjectionStrategy;
+import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
+
+@Model(
+    adaptables = SlingHttpServletRequest.class,
+    adapters = DynamicFundCardModel.class,
+    defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
+)
+public class DynamicFundCardModel {
+
+    @ValueMapValue
+    private String layout;
+
+    @ValueMapValue
+    private String cardSize;
+
+    @ValueMapValue
+    private String apir;
+
+    @ValueMapValue
+    private String content;
+
+    @ValueMapValue
+    private String imageUrl;
+
+    @ValueMapValue
+    private String horizontalLine;
+
+    @ValueMapValue
+    private String verticalLine;
+
+    @ValueMapValue
+    private String mainGroup;
+
+    @ValueMapValue
+    private String product;
+
+    @ValueMapValue
+    private String years;
+
+    @ValueMapValue
+    private String companyCode;
+
+    @ValueMapValue
+    private String api;
+
+    public String getLayout() {
+        return layout;
+    }
+
+    public String getCardSize() {
+        return cardSize;
+    }
+
+    public String getApir() {
+        return apir;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public String getHorizontalLine() {
+        return horizontalLine;
+    }
+
+    public String getVerticalLine() {
+        return verticalLine;
+    }
+
+    public String getMainGroup() {
+        return mainGroup;
+    }
+
+    public String getProduct() {
+        return product;
+    }
+
+    public String getYears() {
+        return years;
+    }
+
+    public String getCompanyCode() {
+        return companyCode;
+    }
+
+    public String getApi() {
+        return api;
+    }
+}
+
