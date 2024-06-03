@@ -2,146 +2,71 @@
 /apps/cfs-winged/components/content/dynamicfundperformance/cq:dialog/content/items/column/items/mainGroup/datasource
 /apps/cfs-winged/components/content/pricePerformanceCard/cq:dialog
 ..................................................................
-{
-    "companyCode": "001",
-    "api": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance",
-    "mainGroup": {
-        "SF": "Super",
-        "RF": "Pension",
-        "IF": "Investments",
-        "WF": "Institutional & master trust"
-    },
-    "products": {
-        "11": "FirstChoice Wholesale Personal Super",
-        "65": "FirstChoice Employer Super",
-        "51": "FirstChoice Wholesale Pension",
-        "91": "FirstChoice Wholesale Investments",
-        "70": "FirstChoice Investments",
-        "90": "Managed Investment Funds",
-        "91,73,120": "Institutional & master trust"
-    },
-    "years": {
-        "oneYear": "1 year",
-        "twoYears": "2 years",
-        "threeYears": "3 years",
-        "fourYears": "4 years",
-        "fiveYears": "5 years",
-        "sevenYears": "7 years",
-        "tenYears": "10 years",
-        "sinceInception": "Since inception"
-    }
-}
+<sly data-sly-use.templates="core/wcm/components/commons/v1/templates.html"></sly>
+<sly data-sly-use.dynamicModel="au.com.cfs.winged.core.models.DynamicFundCardModel"></sly>
+<sly data-sly-use.model="au.com.cfs.winged.core.models.ButtonModel" />
+<div
+    data-sly-test="${dynamicModel.apir}"
+    data-fp-apir="${dynamicModel.apir}"
+    data-cmp-is="pricePerformanceCard"
+    data-fp-companyCode="001"
+    data-fp-mainGroup="SF"
+    data-fp-api="https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
+    data-fp-product="11"
+    data-fp-year="oneYear"
+    data-fp-dateText="Since inception #date# todo"
+    class="CardPromo CardPromo--layout-${dynamicModel.layout ? dynamicModel.layout : 'vertical'} ${dynamicModel.cardSize == 'large' ? 'CardPromo--cardType-fund CardPromo--paddingSize-large ' : ''} ${dynamicModel.cardSize == 'small' ? 'CardPromo--cardType-fund CardPromo--paddingSize-small' : ''} ${dynamicModel.imageUrl ? '' : 'CardPromo--minHeightNoImg'}"
+>
+    <div class="CardPromo__Container ${dynamicModel.horizontalLine && 'horizondalLine'} ${dynamicModel.verticalLine && 'verticalLine'}">
+        <div class="CardPromo__Image" data-sly-test="${dynamicModel.imageUrl}">
+            <img alt="" src="${dynamicModel.imageUrl @context='html'}" />
+        </div>
+        <div class="CardPromo__Content" data-cmp-hook-shimmer>
+            <div class="Shimmer__Header FP_Shimmer"></div>
+            <div class="Shimmer__Super FP_Shimmer"></div>
+            <div class="Shimmer_ContentCopy FP_Shimmer"></div>
+        </div>
+        <div class="CardPromo__Content inactive" data-cmp-hook-content>
+            <h3 class="CardPromo__Heading" data-sly-test="${dynamicModel.apir}">
+                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout != 'horizontal'}" x-cq-linkchecker="valid"> </span>
 
+                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout == 'horizontal'}"></span>
+            </h3>
 
-....................................................................
-package au.com.cfs.winged.servlets;
-
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.crx.JcrConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-/**
-	* @author Shiv
-	*/
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
-"sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET
-})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-	transient ResourceResolver resourceResolver;
-	transient Resource pathResource;
-	transient ValueMap valueMap;
-	transient List<Resource> resourceList;
-
-	@Override
-	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
-		resourceResolver = request.getResourceResolver();
-		pathResource = request.getResource();
-		resourceList = new ArrayList<>();
-
-		try {
-			/* Getting AEM Tags Path given on datasource Node */
-			String jsonDataPath = Objects.requireNonNull(pathResource.getChild("datasource")).getValueMap().get("jsonDataPath", String.class);
-			assert jsonDataPath != null;
-			//Getting Tag Resource using JsonData
-			Resource jsonResource = request.getResourceResolver().getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
-			assert jsonResource != null;
-			//Getting Node from jsonResource
-			Node jsonNode = jsonResource.adaptTo(Node.class);
-			assert jsonNode != null;
-			//Converting input stream to JSON Object
-			InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
-
-			StringBuilder stringBuilder = new StringBuilder();
-			String eachLine;
-			assert inputStream != null;
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-
-			while ((eachLine = bufferedReader.readLine()) != null) {
-				stringBuilder.append(eachLine);
-			}
-
-			JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-			Iterator<String> jsonKeys = jsonObject.keys();
-			//Iterating JSON Objects over key
-			while (jsonKeys.hasNext()) {
-				String jsonKey = jsonKeys.next();
-				String jsonValue = jsonObject.getString(jsonKey);
-
-				valueMap = new ValueMapDecorator(new HashMap<>());
-				valueMap.put("value", jsonKey);
-				valueMap.put("text", jsonValue);
-				resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-			}
-
-			/*Create a DataSource that is used to populate the drop-down control*/
-			DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-			request.setAttribute(DataSource.class.getName(), dataSource);
-
-		} catch (JSONException | IOException | RepositoryException e) {
-			LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-		}
-	}
-}
-
-...........................................................................................
+            <h3 data-cmp-hook-fpsuperheader class="CardPromo__Super" data-sly-test="${dynamicModel.apir}"></h3>
+            <div data-cmp-hook-fpsuperdesc class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.apir}"></div>
+            <div class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.content}">${dynamicModel.content @ context='unsafe'}</div>
+            <div class="CardPromo__Buttons" data-sly-list.cta="${model.ctas}">
+                <div class="CardPromo__Button">
+                    <sly
+                        data-sly-use.buttonTemp="/apps/cfs-winged/components/content/button/buttonTemp.html"
+                        data-sly-call="${buttonTemp.buttonTemplate @ buttonLabel=cta.label,
+                      href=cta.href,
+                      target=cta.target,
+                      theme=cta.theme,
+                      type=cta.type,
+                      trackingName=cta.trackingName
+                      }"
+                    ></sly>
+                </div>
+            </div>
+        </div>
+        <div class="CardPromo__Content inactive" data-cmp-hook-fperror>
+            <div class="FP__Error"></div>
+        </div>
+    </div>
+</div>
+<sly data-sly-call="${templates.placeholder @ isEmpty = !dynamicModel.apir, classAppend = ''}"></sly>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 <?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
     jcr:primaryType="nt:unstructured"
-    jcr:title="Price Performance"
+    jcr:title="Dynamic Data"
     sling:resourceType="cq/gui/components/authoring/dialog">
     <content
         jcr:primaryType="nt:unstructured"
-        sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns">
+        sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns"
+        includes="[cfs.fundcard.dialog]">
         <items jcr:primaryType="nt:unstructured">
             <column
                 jcr:primaryType="nt:unstructured"
@@ -179,39 +104,29 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
                                 value="small"/>
                         </items>
                     </size>
-                    <companyCode
-                        jcr:primaryType="nt:unstructured"
-                        sling:hideResource="{Boolean}true"
-                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                        name="./companyCode"/>
-                    <api
-                        jcr:primaryType="nt:unstructured"
-                        sling:hideResource="{Boolean}true"
-                        sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                        name="./api"/>
-                    <mainGroup
-                        jcr:primaryType="nt:unstructured"
-                        sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                        fieldDescription="Select the main group dropdown"
-                        fieldLabel="Select Main Group"
-                        name="./mainGroup">
-                        <datasource
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="/bin/jsonDataDropdown"
-                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
-                        <dropdown.json/>
-                    </mainGroup>
                     <apir
                         jcr:primaryType="nt:unstructured"
                         sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
                         fieldDescription="Author the unique APiR Code to get the net performance figures"
-                        fieldLabel="APiR Code (Enter the unique APIR code)"
+                        fieldLabel="APiR Code"
                         name="./apir"
                         required="{Boolean}true"/>
+                    <content
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="cq/gui/components/authoring/dialog/richtext"
+                            fieldLabel="Description"
+                            name="./content"
+                            useFixedInlineToolbar="{Boolean}true">
+                        <rtePlugins
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
+                        <uiSettings
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
+                    </content>
                     <imageUrl
                         jcr:primaryType="nt:unstructured"
                         sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
-                        droppable="{Boolean}true"
                         fieldDescription="Add a Image from the DAM section for the card"
                         fieldLabel="Image Path (from DAM)"
                         name="./imageUrl"
@@ -230,115 +145,31 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
                         name="./verticalLine"
                         text="Vertical Line"
                         value="{Boolean}true"/>
+                    <buttons
+                        jcr:primaryType="nt:unstructured"
+                        jcr:title="Buttons"
+                        sling:resourceType="granite/ui/components/coral/foundation/container">
+                        <items jcr:primaryType="nt:unstructured">
+                            <actions
+                                granite:class="cmp-teaser__editor-multifield_actions"
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
+                                composite="{Boolean}true"
+                                fieldLabel="Add Buttons">
+                                <field
+                                    granite:class="multifield-item-boarder-bottom"
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceType="granite/ui/components/coral/foundation/container"
+                                    name="./actions">
+                                    <items
+                                        jcr:primaryType="nt:unstructured"
+                                        sling:resourceSuperType="/apps/cfs-winged/global/buttonDialog/items"/>
+                                </field>
+                            </actions>
+                        </items>
+                    </buttons>
                 </items>
             </column>
         </items>
     </content>
 </jcr:root>
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.crx.JcrConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-
-@Component(service = Servlet.class, property = {
-        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
-})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-    transient ResourceResolver resourceResolver;
-    transient Resource pathResource;
-    transient ValueMap valueMap;
-    transient List<Resource> resourceList;
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
-        resourceResolver = request.getResourceResolver();
-        pathResource = request.getResource();
-        resourceList = new ArrayList<>();
-
-        try {
-            // Retain existing code to retrieve JSON data from AEM content node
-            String jsonDataPath = Objects.requireNonNull(pathResource.getChild("datasource")).getValueMap().get("jsonDataPath", String.class);
-            assert jsonDataPath != null;
-            Resource jsonResource = request.getResourceResolver().getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
-            assert jsonResource != null;
-            Node jsonNode = jsonResource.adaptTo(Node.class);
-            assert jsonNode != null;
-
-            // Read JSON data from the node
-            InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
-
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
-
-            // Parse JSON string to JSONObject
-            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-
-            // Extract companyCode and api values
-            String companyCode = jsonObject.getString("companyCode");
-            String api = jsonObject.getString("api");
-
-            // Set companyCode and api values as request attributes
-            request.setAttribute("companyCode", companyCode);
-            request.setAttribute("api", api);
-
-            // Extract and parse mainGroup JSON object
-            JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
-            Iterator<String> jsonKeys = mainGroupJson.keys();
-
-            while (jsonKeys.hasNext()) {
-                String jsonKey = jsonKeys.next();
-                String jsonValue = mainGroupJson.getString(jsonKey);
-
-                valueMap = new ValueMapDecorator(new HashMap<>());
-                valueMap.put("value", jsonKey);
-                valueMap.put("text", jsonValue);
-                resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-            }
-
-            // Create a DataSource that is used to populate the drop-down control
-            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), dataSource);
-
-        } catch (JSONException | IOException | RepositoryException e) {
-            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-        }
-    }
-}
