@@ -203,3 +203,15 @@
         "sinceInception": "Since inception"
     }
 }
+....................................................
+{
+    "companyCode": "001",
+    "api": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance",
+    "mainGroup": {
+        "SF": "Super",
+        "RF": "Pension",
+        "IF": "Investments",
+        "WF": "Institutional & master trust"
+    }
+    
+}
