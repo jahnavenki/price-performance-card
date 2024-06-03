@@ -173,3 +173,33 @@
         </items>
     </content>
 </jcr:root>
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+{
+    "companyCode": "001",
+    "api": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance",
+    "mainGroup": {
+        "SF": "Super",
+        "RF": "Pension",
+        "IF": "Investments",
+        "WF": "Institutional & master trust"
+    },
+    "products": {
+        "11": "FirstChoice Wholesale Personal Super",
+        "65": "FirstChoice Employer Super",
+        "51": "FirstChoice Wholesale Pension",
+        "91": "FirstChoice Wholesale Investments",
+        "70": "FirstChoice Investments",
+        "90": "Managed Investment Funds",
+        "91,73,120": "Institutional & master trust"
+    },
+    "years": {
+        "oneYear": "1 year",
+        "twoYears": "2 years",
+        "threeYears": "3 years",
+        "fourYears": "4 years",
+        "fiveYears": "5 years",
+        "sevenYears": "7 years",
+        "tenYears": "10 years",
+        "sinceInception": "Since inception"
+    }
+}
