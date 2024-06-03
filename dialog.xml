@@ -65,7 +65,7 @@
                         <datasource
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="/bin/jsonDataDropdown"
-                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                            jsonDataPath="cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
                         <dropdown.json/>
                     </mainGroup>
                     <products
@@ -77,7 +77,7 @@
                         <datasource
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="/bin/jsonDataDropdown"
-                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                            jsonDataPath="cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/column/items/products/dropdown.json"/>
                         <dropdown.json/>
                     </products>
                     <years
@@ -89,7 +89,7 @@
                         <datasource
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="/bin/jsonDataDropdown"
-                            jsonDataPath="cfs-winged/components/content/pricePerformanceCard/cq:dialog/content/items/column/items/mainGroup/dropdown.json"/>
+                            jsonDataPath="cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/column/items/years/dropdown.json"/>
                         <dropdown.json/>
                     </years>
                     <apir
