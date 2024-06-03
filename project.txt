@@ -215,3 +215,29 @@
     }
     
 }
+.............................
+package au.com.cfs.winged.core.services;
+
+import org.osgi.service.component.annotations.Component;
+
+@Component(service = DataService.class)
+public class DataService {
+    private String companyCode;
+    private String api;
+
+    public String getCompanyCode() {
+        return companyCode;
+    }
+
+    public void setCompanyCode(String companyCode) {
+        this.companyCode = companyCode;
+    }
+
+    public String getApi() {
+        return api;
+    }
+
+    public void setApi(String api) {
+        this.api = api;
+    }
+}
