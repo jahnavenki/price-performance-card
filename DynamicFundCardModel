@@ -1,4 +1,3 @@
-
 package au.com.cfs.winged.core.models;
 
 import au.com.cfs.winged.core.models.common.ButtonsModel;
@@ -13,11 +12,7 @@ import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-@Model(
-adaptables = SlingHttpServletRequest.class,
-adapters = DynamicFundCardModel.class,
-defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
-)
+@Model(adaptables = SlingHttpServletRequest.class,	adapters = DynamicFundCardModel.class,	defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
 public class DynamicFundCardModel extends ButtonsModel {
 
 	@Inject
@@ -31,6 +26,9 @@ public class DynamicFundCardModel extends ButtonsModel {
 
 	@ValueMapValue
 	private String apir;
+
+	@ValueMapValue
+	private String inception;
 
 	@ValueMapValue
 	private String content;
@@ -62,13 +60,13 @@ public class DynamicFundCardModel extends ButtonsModel {
 	@OSGiService
 	private DataService dataService;
 
-@PostConstruct
-protected void init(){
-		companyCode= dataService.getCompanyCode();
+	@PostConstruct
+	protected void init() {
+		companyCode = dataService.getCompanyCode();
 		api = dataService.getApi();
-		fundLinkBaseUrl =dataService.getFundLinkBaseUrl();
+		fundLinkBaseUrl = dataService.getFundLinkBaseUrl();
 
-}
+	}
 
 	public String getLayout() {
 		return layout;
@@ -116,6 +114,10 @@ protected void init(){
 
 	public String getApi() {
 		return api;
+	}
+
+	public String getInception() {
+		return inception;
 	}
 
 	public String getFundLinkBaseUrl() {
