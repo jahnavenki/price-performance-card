@@ -1,14 +1,16 @@
-/*
-		Author Venkat
-*/
+
 package au.com.cfs.winged.core.models;
 
+import au.com.cfs.winged.core.models.common.ButtonsModel;
+import au.com.cfs.winged.core.services.DataService;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.models.annotations.DefaultInjectionStrategy;
 import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.OSGiService;
 import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
 
+import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 @Model(
@@ -16,7 +18,10 @@ adaptables = SlingHttpServletRequest.class,
 adapters = DynamicFundCardModel.class,
 defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
 )
-public class DynamicFundCardModel {
+public class DynamicFundCardModel extends ButtonsModel {
+
+	@Inject
+	private ResourceResolver resourceResolver;
 
 	@ValueMapValue
 	private String layout;
@@ -39,8 +44,31 @@ public class DynamicFundCardModel {
 	@ValueMapValue
 	private String verticalLine;
 
-	@Inject
-	private ResourceResolver resourceResolver;
+	@ValueMapValue
+	private String mainGroup;
+
+	@ValueMapValue
+	private String product;
+
+	@ValueMapValue
+	private String year;
+
+	private String companyCode;
+
+	private String api;
+
+	private String fundLinkBaseUrl;
+
+	@OSGiService
+	private DataService dataService;
+
+@PostConstruct
+protected void init(){
+		companyCode= dataService.getCompanyCode();
+		api = dataService.getApi();
+		fundLinkBaseUrl =dataService.getFundLinkBaseUrl();
+
+}
 
 	public String getLayout() {
 		return layout;
@@ -53,6 +81,7 @@ public class DynamicFundCardModel {
 	public String getApir() {
 		return apir;
 	}
+
 	public String getContent() {
 		return content;
 	}
@@ -69,107 +98,28 @@ public class DynamicFundCardModel {
 		return verticalLine;
 	}
 
+	public String getMainGroup() {
+		return mainGroup;
+	}
+
+	public String getProduct() {
+		return product;
+	}
+
+	public String getYear() {
+		return year;
+	}
+
+	public String getCompanyCode() {
+		return companyCode;
+	}
+
+	public String getApi() {
+		return api;
+	}
+
+	public String getFundLinkBaseUrl() {
+		return fundLinkBaseUrl;
+	}
+
 }
-....................................
-/*
-		Author Venkat
-*/
-package au.com.cfs.winged.core.models;
-
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.models.annotations.DefaultInjectionStrategy;
-import org.apache.sling.models.annotations.Model;
-import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
-
-@Model(
-    adaptables = SlingHttpServletRequest.class,
-    adapters = DynamicFundCardModel.class,
-    defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
-)
-public class DynamicFundCardModel {
-
-    @ValueMapValue
-    private String layout;
-
-    @ValueMapValue
-    private String cardSize;
-
-    @ValueMapValue
-    private String apir;
-
-    @ValueMapValue
-    private String content;
-
-    @ValueMapValue
-    private String imageUrl;
-
-    @ValueMapValue
-    private String horizontalLine;
-
-    @ValueMapValue
-    private String verticalLine;
-
-    @ValueMapValue
-    private String mainGroup;
-
-    @ValueMapValue
-    private String product;
-
-    @ValueMapValue
-    private String years;
-
-    @ValueMapValue
-    private String companyCode;
-
-    @ValueMapValue
-    private String api;
-
-    public String getLayout() {
-        return layout;
-    }
-
-    public String getCardSize() {
-        return cardSize;
-    }
-
-    public String getApir() {
-        return apir;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public String getHorizontalLine() {
-        return horizontalLine;
-    }
-
-    public String getVerticalLine() {
-        return verticalLine;
-    }
-
-    public String getMainGroup() {
-        return mainGroup;
-    }
-
-    public String getProduct() {
-        return product;
-    }
-
-    public String getYears() {
-        return years;
-    }
-
-    public String getCompanyCode() {
-        return companyCode;
-    }
-
-    public String getApi() {
-        return api;
-    }
-}
-
