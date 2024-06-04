@@ -63,7 +63,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
 public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
@@ -82,32 +81,62 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
             Asset asset = resource.adaptTo(Asset.class);
             InputStream content = asset.getOriginal().adaptTo(InputStream.class);
 
-            JSONObject jsonObject = new JSONObject(new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8)).lines().collect(Collectors.joining()));
+            StringBuilder stringBuilder = new StringBuilder();
+            String eachLine;
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+
+            while((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
+            }
+
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+
+            String companyCode = jsonObject.getString("companyCode");
+            String api = jsonObject.getString("api");
+            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
+
+            dynamicFundService.setCompanyCode(companyCode);
+            dynamicFundService.setApi(api);
+            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
+
+            List<Resource> mainGroupResourceList = new ArrayList<>();
+            List<Resource> productsResourceList = new ArrayList<>();
+            List<Resource> yearsResourceList = new ArrayList<>();
 
             JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
+            addItemsToResourceList(mainGroupJson, resourceResolver, mainGroupResourceList);
 
-            DataSource dataSource = createFilteredDataSource(mainGroupJson, resourceResolver);
-            request.setAttribute(DataSource.class.getName(), dataSource);
+            JSONObject productsJson = jsonObject.getJSONObject("products");
+            addItemsToResourceList(productsJson, resourceResolver, productsResourceList);
+
+            JSONObject yearsJson = jsonObject.getJSONObject("years");
+            addItemsToResourceList(yearsJson, resourceResolver, yearsResourceList);
+
+            DataSource mainGroupDataSource = new SimpleDataSource(mainGroupResourceList.iterator());
+            request.setAttribute("mainGroupDataSource", mainGroupDataSource);
+
+            DataSource productsDataSource = new SimpleDataSource(productsResourceList.iterator());
+            request.setAttribute("productsDataSource", productsDataSource);
+
+            DataSource yearsDataSource = new SimpleDataSource(yearsResourceList.iterator());
+            request.setAttribute("yearsDataSource", yearsDataSource);
 
         } catch (JSONException | IOException e) {
             LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
         }
     }
 
-    private DataSource createFilteredDataSource(JSONObject mainGroupJson, ResourceResolver resourceResolver) throws JSONException {
-        List<Resource> resourceList = new ArrayList<>();
+    private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
+        Iterator<String> jsonKeys = jsonObject.keys();
 
-        Iterator<String> jsonKeys = mainGroupJson.keys();
-        while (jsonKeys.hasNext()) {
+        while(jsonKeys.hasNext()) {
             String jsonKey = jsonKeys.next();
-            String jsonValue = mainGroupJson.getString(jsonKey);
+            String jsonValue = jsonObject.getString(jsonKey);
 
             ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
             valueMap.put("value", jsonKey);
             valueMap.put("text", jsonValue);
             resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
         }
-
-        return new SimpleDataSource(resourceList.iterator());
     }
 }
