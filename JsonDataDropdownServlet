@@ -1,6 +1,6 @@
 package au.com.cfs.winged.servlets;
 
-import au.com.cfs.winged.core.services.DataService;
+import au.com.cfs.winged.core.services.DynamicFundService;
 import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
 import com.adobe.granite.ui.components.ds.ValueMapResource;
@@ -43,7 +43,7 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 	transient List<Resource> resourceList;
 
 	@Reference
-	private DataService dataService;
+	private DynamicFundService dynamicFundService;
 
 	@Override
 	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
@@ -78,9 +78,9 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 			String api = jsonObject.getString("api");
 			String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
 
-			dataService.setCompanyCode(companyCode);
-			dataService.setApi(api);
-			dataService.setFundLinkBaseUrl(fundLinkBaseUrl);
+			dynamicFundService.setCompanyCode(companyCode);
+			dynamicFundService.setApi(api);
+			dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
 
 			JSONObject productsJson = jsonObject.getJSONObject("products");
 			addItemsToResourceList(productsJson, resourceResolver, resourceList);
