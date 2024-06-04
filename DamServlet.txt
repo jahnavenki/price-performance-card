@@ -1,0 +1,113 @@
+package au.com.cfs.winged.servlets;
+
+import au.com.cfs.winged.core.services.DynamicFundService;
+import com.adobe.granite.ui.components.ds.DataSource;
+import com.adobe.granite.ui.components.ds.SimpleDataSource;
+import com.adobe.granite.ui.components.ds.ValueMapResource;
+import com.day.crx.JcrConstants;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
+import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jcr.Node;
+import javax.jcr.RepositoryException;
+import javax.servlet.Servlet;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+@Component(service = Servlet.class, property = {
+        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
+        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+})
+public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
+
+    @Reference
+    private transient DynamicFundService dynamicFundService;
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+
+        ResourceResolver resourceResolver = request.getResourceResolver();
+        List<Resource> resourceList = new ArrayList<>();
+
+        try {
+            // DAM path to the JSON file
+            String jsonDataPath = "/content/dam/cfs-winged/fpjson/dynamicFundCard.json";
+            Resource jsonResource = resourceResolver.getResource(jsonDataPath + "/" + JcrConstants.JCR_CONTENT);
+            if (jsonResource == null) {
+                throw new RepositoryException("Resource not found: " + jsonDataPath);
+            }
+
+            Node jsonNode = jsonResource.adaptTo(Node.class);
+            if (jsonNode == null) {
+                throw new RepositoryException("Could not adapt resource to a JCR node: " + jsonDataPath);
+            }
+
+            InputStream inputStream = jsonNode.getProperty("jcr:data").getBinary().getStream();
+
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
+
+            String eachLine;
+            while ((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
+            }
+
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+
+            String companyCode = jsonObject.getString("companyCode");
+            String api = jsonObject.getString("api");
+            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
+
+            dynamicFundService.setCompanyCode(companyCode);
+            dynamicFundService.setApi(api);
+            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
+
+            String jsonSection = request.getParameter("jsonSection");
+            if (jsonSection != null) {
+                JSONObject dataJson = jsonObject.getJSONObject(jsonSection);
+                addItemsToResourceList(dataJson, resourceResolver, resourceList);
+            }
+
+            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), dataSource);
+
+        } catch (JSONException | IOException | RepositoryException e) {
+            LOGGER.error("Error in Json Data Exporting: {}", e.getMessage());
+        }
+    }
+
+    private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
+        Iterator<String> jsonKeys = jsonObject.keys();
+
+        while (jsonKeys.hasNext()) {
+            String jsonKey = jsonKeys.next();
+            String jsonValue = jsonObject.getString(jsonKey);
+
+            ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
+            valueMap.put("value", jsonKey);
+            valueMap.put("text", jsonValue);
+            resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
+        }
+    }
+}
