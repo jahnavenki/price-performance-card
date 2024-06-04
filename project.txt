@@ -1,3 +1,64 @@
 [ERROR] ValidationViolation: "jackrabbit-emptyelements: Found empty node (used for ordering only) without an accompanying folder which are included 
 in the filter with mode=replace. Either remove the empty node or add at least the 'jcr:primaryType' attribute to make this node really get replaced.
 ", filePath=jcr_root\apps\cfs-winged\components\content\dynamicFundCard\_cq_dialog\.content.xml, nodePath=/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/column/items/years/dropdown.json
+
+/content/dam/cfs-winged/fpjson/pricenperformance
+..................................................................................
+<sly data-sly-use.templates="core/wcm/components/commons/v1/templates.html"></sly>
+<sly data-sly-use.dynamicModel="au.com.cfs.winged.core.models.DynamicFundCardModel"></sly>
+<div
+        data-sly-test="${dynamicModel.apir}"
+        data-fp-apir="${dynamicModel.apir}"
+        data-cmp-is="pricePerformanceCard"
+        data-fp-companyCode="${dynamicModel.companyCode}"
+        data-fp-mainGroup="${dynamicModel.mainGroup}"
+        data-fp-api="${dynamicModel.api}"
+        data-fp-product="${dynamicModel.product}"
+        data-fp-year="${dynamicModel.year}"
+        data-fp-dateText="Since inception #date# todo"
+        data-fundlink-baseurl="${dynamicModel.fundLinkBaseUrl}"
+        class="CardPromo CardPromo--layout-${dynamicModel.layout ? dynamicModel.layout : 'vertical'} ${dynamicModel.cardSize == 'large' ? 'CardPromo--cardType-fund CardPromo--paddingSize-large ' : ''} ${dynamicModel.cardSize == 'small' ? 'CardPromo--cardType-fund CardPromo--paddingSize-small' : ''} ${dynamicModel.imageUrl ? '' : 'CardPromo--minHeightNoImg'}"
+>
+    <div class="CardPromo__Container ${dynamicModel.horizontalLine && 'horizondalLine'} ${dynamicModel.verticalLine && 'verticalLine'}">
+        <div class="CardPromo__Image" data-sly-test="${dynamicModel.imageUrl}">
+            <img alt="" src="${dynamicModel.imageUrl @context='html'}"/>
+        </div>
+        <div class="CardPromo__Content" data-cmp-hook-shimmer>
+            <div class="Shimmer__Header FP_Shimmer"></div>
+            <div class="Shimmer__Super FP_Shimmer"></div>
+            <div class="Shimmer_ContentCopy FP_Shimmer"></div>
+        </div>
+        <div class="CardPromo__Content inactive" data-cmp-hook-content>
+            <h3 class="CardPromo__Heading" data-sly-test="${dynamicModel.apir}">
+                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout != 'horizontal'}"
+                      x-cq-linkchecker="valid"> </span>
+
+                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout == 'horizontal'}"></span>
+            </h3>
+
+            <h3 data-cmp-hook-fpsuperheader class="CardPromo__Super" data-sly-test="${dynamicModel.apir}"></h3>
+            <div data-cmp-hook-fpsuperdesc class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.apir}"></div>
+            <div class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.content}">${dynamicModel.content @
+                context='unsafe'}
+            </div>
+            <div class="CardPromo__Buttons" data-cmp-hook-fpbutton data-sly-list.cta="${dynamicModel.ctas}">
+                <div class="CardPromo__Button" data-fp-button="${cta.href}">
+                    <sly
+                            data-sly-use.buttonTemp="/apps/cfs-winged/components/content/button/buttonTemp.html"
+                            data-sly-call="${buttonTemp.buttonTemplate @ buttonLabel=cta.label,
+                      href=cta.href,
+                      target=cta.target,
+                      theme=cta.theme,
+                      type=cta.type,
+                      trackingName=cta.trackingName
+                      }"
+                    ></sly>
+                </div>
+            </div>
+        </div>
+        <div class="CardPromo__Content inactive" data-cmp-hook-fperror>
+            <div class="FP__Error"></div>
+        </div>
+    </div>
+</div>
+<sly data-sly-call="${templates.placeholder @ isEmpty = !dynamicModel.apir, classAppend = ''}"></sly>
