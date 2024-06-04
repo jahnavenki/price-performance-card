@@ -1,7 +1,7 @@
 package au.com.cfs.winged.core.models;
 
 import au.com.cfs.winged.core.models.common.ButtonsModel;
-import au.com.cfs.winged.core.services.DataService;
+import au.com.cfs.winged.core.services.DynamicFundService;
 import org.apache.sling.api.SlingHttpServletRequest;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.apache.sling.models.annotations.DefaultInjectionStrategy;
@@ -58,13 +58,13 @@ public class DynamicFundCardModel extends ButtonsModel {
 	private String fundLinkBaseUrl;
 
 	@OSGiService
-	private DataService dataService;
+	private DynamicFundService dynamicFundService;
 
 	@PostConstruct
 	protected void init() {
-		companyCode = dataService.getCompanyCode();
-		api = dataService.getApi();
-		fundLinkBaseUrl = dataService.getFundLinkBaseUrl();
+		companyCode = dynamicFundService.getCompanyCode();
+		api = dynamicFundService.getApi();
+		fundLinkBaseUrl = dynamicFundService.getFundLinkBaseUrl();
 
 	}
 
