@@ -62,3 +62,5 @@ in the filter with mode=replace. Either remove the empty node or add at least th
     </div>
 </div>
 <sly data-sly-call="${templates.placeholder @ isEmpty = !dynamicModel.apir, classAppend = ''}"></sly>
+
+https://aemsimplifiedbynikhil.wordpress.com/2019/10/04/read-write-data-in-json-file-of-dam-in-aem-making-rest-api-call/
