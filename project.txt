@@ -61,86 +61,83 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
+@Component(service = Servlet.class, property = {
+        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
+        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+})
 public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
 
-	transient ResourceResolver resourceResolver;
-	transient Resource pathResource;
-	transient ValueMap valueMap;
-	transient List<Resource> mainGroupResourceList;
-	transient List<Resource> productsPResourceList;
-	transient List<Resource> yearsResourceList;
-	transient List<Resource> resourceList;
+    @Reference
+    private DynamicFundService dynamicFundService;
 
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 
-	@Reference
-	private DynamicFundService dynamicFundService;
-	private String jsonKey;
+        Resource pathResource = request.getResource();
+        List<Resource> productsList = new ArrayList<>();
+        List<Resource> yearsList = new ArrayList<>();
+        List<Resource> mainGroupList = new ArrayList<>();
 
-	@Override
-	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-		Resource original;
-		try {
-			ResourceResolver resourceResolver = request.getResourceResolver();
-			Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-			Asset asset = resource.adaptTo(Asset.class);
-			original = asset.getOriginal();
-			InputStream content = original.adaptTo(InputStream.class);
-			StringBuilder stringBuilder = new StringBuilder();
-			String eachLine;
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+        try {
+            ResourceResolver resourceResolver = request.getResourceResolver();
+            Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
+            Asset asset = resource.adaptTo(Asset.class);
+            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
+            StringBuilder stringBuilder = new StringBuilder();
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+            String eachLine;
 
-			while((eachLine = bufferedReader.readLine()) != null) {
-				stringBuilder.append(eachLine);
-			}
+            while ((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
+            }
 
-			JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
 
-			String companyCode = jsonObject.getString("companyCode");
-			String api = jsonObject.getString("api");
-			String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
+            String companyCode = jsonObject.getString("companyCode");
+            String api = jsonObject.getString("api");
+            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
 
-			dynamicFundService.setCompanyCode(companyCode);
-			dynamicFundService.setApi(api);
-			dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
+            dynamicFundService.setCompanyCode(companyCode);
+            dynamicFundService.setApi(api);
+            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
 
-			JSONObject productsJson = jsonObject.getJSONObject("products");
-			LOGGER.info("Product Jos: {}",productsJson.toString());
-			addItemsToResourceList(productsJson, resourceResolver, productsPResourceList);
+            JSONObject productsJson = jsonObject.getJSONObject("products");
+            addItemsToResourceList(productsJson, resourceResolver, productsList);
 
-			JSONObject yearsJson = jsonObject.getJSONObject("years");
-			addItemsToResourceList(yearsJson, resourceResolver, yearsResourceList);
+            JSONObject yearsJson = jsonObject.getJSONObject("years");
+            addItemsToResourceList(yearsJson, resourceResolver, yearsList);
 
-			JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
-			addItemsToResourceList(mainGroupJson, resourceResolver, mainGroupResourceList);
+            JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
+            addItemsToResourceList(mainGroupJson, resourceResolver, mainGroupList);
 
-			DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-			request.setAttribute(DataSource.class.getName(), dataSource);
+            request.setAttribute("productsDataSource", new SimpleDataSource(productsList.iterator()));
+            request.setAttribute("yearsDataSource", new SimpleDataSource(yearsList.iterator()));
+            request.setAttribute("mainGroupDataSource", new SimpleDataSource(mainGroupList.iterator()));
 
-		} catch(JSONException | IOException e) {
-			LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-		}
-	}
+        } catch (JSONException | IOException e) {
+            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
+        }
+    }
 
-	private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
-		Iterator<String> jsonKeys = jsonObject.keys();
+    private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
+        Iterator<String> jsonKeys = jsonObject.keys();
 
-		while(jsonKeys.hasNext()) {
-			String jsonKey = jsonKeys.next();
-			String jsonValue = jsonObject.getString(jsonKey);
+        while (jsonKeys.hasNext()) {
+            String jsonKey = jsonKeys.next();
+            String jsonValue = jsonObject.getString(jsonKey);
 
-			ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
-			valueMap.put("value", jsonKey);
-			valueMap.put("text", jsonValue);
-			if("products") {
-				resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-			}
-		}
-	}
+            ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
+            valueMap.put("value", jsonKey);
+            valueMap.put("text", jsonValue);
+            resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
+        }
+    }
 }
