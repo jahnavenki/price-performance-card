@@ -1,151 +1,153 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:cq="http://www.day.com/jcr/cq/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
-          jcr:primaryType="nt:unstructured"
-          jcr:title="Dynamic Data"
-          sling:resourceType="cq/gui/components/authoring/dialog">
-    <content
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+    jcr:primaryType="nt:unstructured">
+    <items jcr:primaryType="nt:unstructured">
+        <accordion
+            granite:class="js-cq-IPEPlugin-container"
             jcr:primaryType="nt:unstructured"
-            sling:resourceType="granite/ui/components/coral/foundation/fixedcolumns"
-            includes="[cfs.fundcard.dialog]">
-        <items jcr:primaryType="nt:unstructured">
-            <column
+            sling:resourceType="granite/ui/components/coral/foundation/accordion"
+            variant="quiet">
+            <items jcr:primaryType="nt:unstructured">
+                <general
                     jcr:primaryType="nt:unstructured"
-                    sling:resourceType="granite/ui/components/coral/foundation/container">
-                <items jcr:primaryType="nt:unstructured">
-                    <layout
+                    jcr:title="General"
+                    sling:resourceType="granite/ui/components/coral/foundation/container"
+                    active="true">
+                    <items jcr:primaryType="nt:unstructured">
+                        <layout
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="granite/ui/components/coral/foundation/form/select"
                             fieldLabel="Layout"
                             name="./layout">
-                        <items jcr:primaryType="nt:unstructured">
-                            <vertical
+                            <items jcr:primaryType="nt:unstructured">
+                                <vertical
                                     jcr:primaryType="nt:unstructured"
                                     text="Vertical"
                                     value="vertical"/>
-                            <horizontal
+                                <horizontal
                                     jcr:primaryType="nt:unstructured"
                                     text="Horizontal"
                                     value="horizontal"/>
-                        </items>
-                    </layout>
-                    <size
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                            fieldLabel="Size"
-                            name="./cardSize">
-                        <items jcr:primaryType="nt:unstructured">
-                            <default
-                                    jcr:primaryType="nt:unstructured"
-                                    text="Large"
-                                    value="large"/>
-                            <small
-                                    jcr:primaryType="nt:unstructured"
-                                    text="Small"
-                                    value="small"/>
-                        </items>
-                    </size>
-                    <mainGroup
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                            fieldDescription="Select the main group dropdown"
-                            fieldLabel="Select Main Group"
-                            name="./mainGroup">
-                        <datasource
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="/bin/jsonDataDropdown"/>
-                    </mainGroup>
-                    <products
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                            fieldDescription="Select the main group dropdown"
-                            fieldLabel="Select Product"
-                            name="./product">
-                        <datasource
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="/bin/jsonDataDropdown"/>
-                    </products>
-                    <apir
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                            fieldDescription="Author the unique APiR Code to get the net performance figures"
-                            fieldLabel="APiR Code"
-                            name="./apir"
-                            required="{Boolean}true"/>
-                    <years
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                            fieldDescription="Select the main group dropdown"
-                            fieldLabel="Select Year"
-                            name="./year">
-                        <datasource
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="/bin/jsonDataDropdown"/>
-                    </years>
-                    <inceptionText
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                            fieldDescription="Enter the plain text"
-                            fieldLabel="Enter Inception Text"
-                            name="./inception"/>
-                    <content
+                            </items>
+                        </layout>
+                        <content
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="cq/gui/components/authoring/dialog/richtext"
                             fieldLabel="Description"
                             name="./content"
                             useFixedInlineToolbar="{Boolean}true">
-                        <rtePlugins
+                            <rtePlugins
                                 jcr:primaryType="nt:unstructured"
                                 sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
-                        <uiSettings
+                            <uiSettings
                                 jcr:primaryType="nt:unstructured"
                                 sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
-                    </content>
-                    <imageUrl
-                            jcr:primaryType="nt:unstructured"
-                            sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
-                            fieldDescription="Add a Image from the DAM section for the card"
-                            fieldLabel="Image Path (from DAM)"
-                            name="./imageUrl"
-                            rootPath="/content/dam"/>
-                    <horizontalLine
+                        </content>
+                        <horizontalLine
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="granite/ui/components/foundation/form/checkbox"
                             fieldDescription="Add a checkbox"
                             name="./horizontalLine"
                             text="Horizontal Line"
                             value="{Boolean}true"/>
-                    <verticalLine
+                        <verticalLine
                             jcr:primaryType="nt:unstructured"
                             sling:resourceType="granite/ui/components/foundation/form/checkbox"
                             fieldDescription="Add a checkbox"
                             name="./verticalLine"
                             text="Vertical Line"
                             value="{Boolean}true"/>
-                    <buttons
+                    </items>
+                </general>
+                <media
+                    jcr:primaryType="nt:unstructured"
+                    jcr:title="Media"
+                    sling:resourceType="granite/ui/components/coral/foundation/container">
+                    <items jcr:primaryType="nt:unstructured">
+                        <imageUrl
                             jcr:primaryType="nt:unstructured"
-                            jcr:title="Buttons"
-                            sling:resourceType="granite/ui/components/coral/foundation/container">
-                        <items jcr:primaryType="nt:unstructured">
-                            <actions
-                                    granite:class="cmp-teaser__editor-multifield_actions"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
+                            fieldDescription="Add a Image from the DAM section for the card"
+                            fieldLabel="Image Path (from DAM)"
+                            name="./imageUrl"
+                            rootPath="/content/dam"/>
+                    </items>
+                </media>
+                <buttons
+                    jcr:primaryType="nt:unstructured"
+                    jcr:title="Buttons"
+                    sling:resourceType="granite/ui/components/coral/foundation/container">
+                    <items jcr:primaryType="nt:unstructured">
+                        <actions
+                            granite:class="cmp-teaser__editor-multifield_actions"
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
+                            composite="{Boolean}true"
+                            fieldLabel="Add Buttons">
+                            <field
+                                granite:class="multifield-item-boarder-bottom"
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/container"
+                                name="./actions">
+                                <items
                                     jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
-                                    composite="{Boolean}true"
-                                    fieldLabel="Add Buttons">
-                                <field
-                                        granite:class="multifield-item-boarder-bottom"
-                                        jcr:primaryType="nt:unstructured"
-                                        sling:resourceType="granite/ui/components/coral/foundation/container"
-                                        name="./actions">
-                                    <items
-                                            jcr:primaryType="nt:unstructured"
-                                            sling:resourceSuperType="/apps/cfs-winged/global/buttonDialog/items"/>
-                                </field>
-                            </actions>
-                        </items>
-                    </buttons>
-                </items>
-            </column>
-        </items>
-    </content>
+                                    sling:resourceSuperType="/apps/cfs-winged/global/buttonDialog/items"/>
+                            </field>
+                        </actions>
+                    </items>
+                </buttons>
+                <dynamicFund
+                    jcr:primaryType="nt:unstructured"
+                    jcr:title="Dynamic Funds"
+                    sling:resourceType="granite/ui/components/coral/foundation/container"
+                    active="true">
+                    <items jcr:primaryType="nt:unstructured">
+                        <mainGroup
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                            fieldDescription="Select the main group dropdown"
+                            fieldLabel="Select Main Group"
+                            name="./mainGroup">
+                            <datasource
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="/bin/jsonDataDropdown"/>
+                        </mainGroup>
+                        <products
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                            fieldDescription="Select the main group dropdown"
+                            fieldLabel="Select Product"
+                            name="./product">
+                            <datasource
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="/bin/jsonDataDropdown"/>
+                        </products>
+                        <apir
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                            fieldDescription="Author the unique APiR Code to get the net performance figures"
+                            fieldLabel="APiR Code"
+                            name="./apir"
+                            required="{Boolean}true"/>
+                        <years
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                            fieldDescription="Select the main group dropdown"
+                            fieldLabel="Select Year"
+                            name="./year">
+                            <datasource
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="/bin/jsonDataDropdown"/>
+                        </years>
+                        <inceptionText
+                            jcr:primaryType="nt:unstructured"
+                            sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                            fieldDescription="Enter the plain text"
+                            fieldLabel="Enter Inception Text"
+                            name="./inception"/>
+                    </items>
+                </dynamicFund>
+            </items>
+        </accordion>
+    </items>
 </jcr:root>
