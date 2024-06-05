@@ -33,7 +33,11 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
+@Component(service = Servlet.class, property = {
+        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
+        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+})
 public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
@@ -46,16 +50,20 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
         List<Resource> resourceList = new ArrayList<>();
         String field = request.getParameter("field");
+
         if (field == null || field.isEmpty()) {
             LOGGER.error("Field parameter is missing");
+            response.setStatus(SlingHttpServletResponse.SC_BAD_REQUEST);
             return;
         }
 
         try {
             ResourceResolver resourceResolver = request.getResourceResolver();
             Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
+
             if (resource == null) {
                 LOGGER.error("Resource not found at specified path");
+                response.setStatus(SlingHttpServletResponse.SC_NOT_FOUND);
                 return;
             }
 
@@ -65,53 +73,55 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
                 return;
             }
 
-            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
-            if (content == null) {
-                LOGGER.error("Failed to get content from asset");
-                return;
+            try (InputStream content = asset.getOriginal().adaptTo(InputStream.class);
+                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8))) {
+
+                StringBuilder stringBuilder = new StringBuilder();
+                String eachLine;
+                while ((eachLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(eachLine);
+                }
+
+                JSONObject jsonObject = new JSONObject(stringBuilder.toString());
+
+                // Set dynamic fund service properties
+                dynamicFundService.setCompanyCode(jsonObject.getString("companyCode"));
+                dynamicFundService.setApi(jsonObject.getString("api"));
+                dynamicFundService.setFundLinkBaseUrl(jsonObject.getString("fundLinkBaseUrl"));
+
+                // Filter items based on the field parameter
+                switch (field) {
+                    case "mainGroup":
+                        addItemsToResourceList(jsonObject.getJSONObject("mainGroup"), resourceResolver, resourceList);
+                        break;
+                    case "products":
+                        addItemsToResourceList(jsonObject.getJSONObject("products"), resourceResolver, resourceList);
+                        break;
+                    case "years":
+                        addItemsToResourceList(jsonObject.getJSONObject("years"), resourceResolver, resourceList);
+                        break;
+                    default:
+                        LOGGER.error("Invalid field parameter value");
+                        response.setStatus(SlingHttpServletResponse.SC_BAD_REQUEST);
+                        return;
+                }
+
+                DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+                request.setAttribute(DataSource.class.getName(), dataSource);
+
+            } catch (IOException | JSONException e) {
+                LOGGER.error("Error reading JSON content: ", e);
+                response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             }
 
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
-
-            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-
-            String companyCode = jsonObject.getString("companyCode");
-            String api = jsonObject.getString("api");
-            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
-
-            dynamicFundService.setCompanyCode(companyCode);
-            dynamicFundService.setApi(api);
-            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
-
-            // Filter and add items based on the field parameter
-            if ("mainGroup".equals(field)) {
-                addItemsToResourceList(jsonObject.getJSONObject("mainGroup"), resourceResolver, resourceList);
-            } else if ("products".equals(field)) {
-                addItemsToResourceList(jsonObject.getJSONObject("products"), resourceResolver, resourceList);
-            } else if ("years".equals(field)) {
-                addItemsToResourceList(jsonObject.getJSONObject("years"), resourceResolver, resourceList);
-            } else {
-                LOGGER.error("Invalid field parameter value");
-                return;
-            }
-
-            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), dataSource);
-
-        } catch (JSONException | IOException e) {
-            LOGGER.error("Error in Json Data Exporting: {}", e.getMessage());
+        } catch (Exception e) {
+            LOGGER.error("Unexpected error: ", e);
+            response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
     private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
         Iterator<String> jsonKeys = jsonObject.keys();
-
         while (jsonKeys.hasNext()) {
             String jsonKey = jsonKeys.next();
             String jsonValue = jsonObject.getString(jsonKey);
