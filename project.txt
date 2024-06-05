@@ -1,34 +1,3 @@
-{
-    "companyCode": "001",
-    "api": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance",
-    "fundLinkBaseUrl": "https://www.colonialfirststate.com.au",
-    "mainGroup": {
-        "SF": "Super",
-        "RF": "Pension",
-        "IF": "Investments",
-        "WF": "Institutional & master trust"
-    },
-    "products": {
-        "11": "FirstChoice Wholesale Personal Super",
-        "65": "FirstChoice Employer Super",
-        "51": "FirstChoice Wholesale Pension",
-        "91": "FirstChoice Wholesale Investments",
-        "70": "FirstChoice Investments",
-        "90": "Managed Investment Funds",
-        "91,73,120": "Institutional & master trust"
-    },
-    "years": {
-        "oneYear": "1 year",
-        "twoYears": "2 years",
-        "threeYears": "3 years",
-        "fourYears": "4 years",
-        "fiveYears": "5 years",
-        "sevenYears": "7 years",
-        "tenYears": "10 years",
-        "sinceInception": "Since inception"
-    }
-}
-............................
 package au.com.cfs.winged.servlets;
 
 import au.com.cfs.winged.core.services.DynamicFundService;
@@ -75,17 +44,38 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 
+        List<Resource> resourceList = new ArrayList<>();
+        String field = request.getParameter("field");
+        if (field == null || field.isEmpty()) {
+            LOGGER.error("Field parameter is missing");
+            return;
+        }
+
         try {
             ResourceResolver resourceResolver = request.getResourceResolver();
             Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-            Asset asset = resource.adaptTo(Asset.class);
-            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
+            if (resource == null) {
+                LOGGER.error("Resource not found at specified path");
+                return;
+            }
 
+            Asset asset = resource.adaptTo(Asset.class);
+            if (asset == null) {
+                LOGGER.error("Failed to adapt resource to Asset");
+                return;
+            }
+
+            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
+            if (content == null) {
+                LOGGER.error("Failed to get content from asset");
+                return;
+            }
+
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
             StringBuilder stringBuilder = new StringBuilder();
             String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
 
-            while((eachLine = bufferedReader.readLine()) != null) {
+            while ((eachLine = bufferedReader.readLine()) != null) {
                 stringBuilder.append(eachLine);
             }
 
@@ -99,37 +89,30 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
             dynamicFundService.setApi(api);
             dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
 
-            List<Resource> mainGroupResourceList = new ArrayList<>();
-            List<Resource> productsResourceList = new ArrayList<>();
-            List<Resource> yearsResourceList = new ArrayList<>();
+            // Filter and add items based on the field parameter
+            if ("mainGroup".equals(field)) {
+                addItemsToResourceList(jsonObject.getJSONObject("mainGroup"), resourceResolver, resourceList);
+            } else if ("products".equals(field)) {
+                addItemsToResourceList(jsonObject.getJSONObject("products"), resourceResolver, resourceList);
+            } else if ("years".equals(field)) {
+                addItemsToResourceList(jsonObject.getJSONObject("years"), resourceResolver, resourceList);
+            } else {
+                LOGGER.error("Invalid field parameter value");
+                return;
+            }
 
-            JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
-            addItemsToResourceList(mainGroupJson, resourceResolver, mainGroupResourceList);
-
-            JSONObject productsJson = jsonObject.getJSONObject("products");
-            addItemsToResourceList(productsJson, resourceResolver, productsResourceList);
-
-            JSONObject yearsJson = jsonObject.getJSONObject("years");
-            addItemsToResourceList(yearsJson, resourceResolver, yearsResourceList);
-
-            DataSource mainGroupDataSource = new SimpleDataSource(mainGroupResourceList.iterator());
-            request.setAttribute("mainGroupDataSource", mainGroupDataSource);
-
-            DataSource productsDataSource = new SimpleDataSource(productsResourceList.iterator());
-            request.setAttribute("productsDataSource", productsDataSource);
-
-            DataSource yearsDataSource = new SimpleDataSource(yearsResourceList.iterator());
-            request.setAttribute("yearsDataSource", yearsDataSource);
+            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), dataSource);
 
         } catch (JSONException | IOException e) {
-            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
+            LOGGER.error("Error in Json Data Exporting: {}", e.getMessage());
         }
     }
 
     private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
         Iterator<String> jsonKeys = jsonObject.keys();
 
-        while(jsonKeys.hasNext()) {
+        while (jsonKeys.hasNext()) {
             String jsonKey = jsonKeys.next();
             String jsonValue = jsonObject.getString(jsonKey);
 
