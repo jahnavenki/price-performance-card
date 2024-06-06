@@ -30,128 +30,7 @@
         "sinceInception": "Since inception"
     }
 }
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-package au.com.cfs.winged.servlets;
-
-import au.com.cfs.winged.core.services.DynamicFundService;
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.dam.api.Asset;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-	transient ResourceResolver resourceResolver;
-	transient Resource pathResource;
-	transient ValueMap valueMap;
-	transient List<Resource> resourceList;
-
-	@Reference
-	private DynamicFundService dynamicFundService;
-
-	@Override
-	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
-		resourceList = new ArrayList<>();
-		Resource original;
-
-		try {
-			ResourceResolver resourceResolver = request.getResourceResolver();
-			Resource resource = resourceResolver
-			.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-			Asset asset = resource.adaptTo(Asset.class);
-			original = asset.getOriginal();
-			InputStream content = original.adaptTo(InputStream.class);
-			StringBuilder stringBuilder = new StringBuilder();
-			String eachLine;
-			BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
-
-			while((eachLine = bufferedReader.readLine()) != null) {
-				stringBuilder.append(eachLine);
-			}
-
-			JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-
-
-			String companyCode = jsonObject.getString("companyCode");
-			String api = jsonObject.getString("api");
-			String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
-
-			dynamicFundService.setCompanyCode(companyCode);
-			dynamicFundService.setApi(api);
-			dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
-
-			JSONObject productsJson = jsonObject.getJSONObject("products");
-			List<Resource> productList = new ArrayList<>();
-			addItemsToResourceList(productsJson, resourceResolver, productList);
-			DataSource productDataSource = new SimpleDataSource(productList.iterator());
-			request.setAttribute(DataSource.class.getName(), productDataSource);
-
-			JSONObject yearsJson = jsonObject.getJSONObject("years");
-			List<Resource> yearList = new ArrayList<>();
-			addItemsToResourceList(yearsJson, resourceResolver, yearList);
-			DataSource yearDataSource = new SimpleDataSource(yearList.iterator());
-			request.setAttribute(DataSource.class.getName(), yearDataSource);
-
-			JSONObject mainGroupJson = jsonObject.getJSONObject("mainGroup");
-			List<Resource> mainGroupList = new ArrayList<>();
-			addItemsToResourceList(mainGroupJson, resourceResolver, mainGroupList);
-			DataSource mainGroupDataSource = new SimpleDataSource(mainGroupList.iterator());
-			request.setAttribute(DataSource.class.getName(), mainGroupDataSource);
-
-	 /* DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-			request.setAttribute(DataSource.class.getName(), dataSource);*/
-
-		} catch(JSONException | IOException e) {
-			LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-		}
-	}
-
-	private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
-		Iterator<String> jsonKeys = jsonObject.keys();
-
-		while(jsonKeys.hasNext()) {
-			String jsonKey = jsonKeys.next();
-			String jsonValue = jsonObject.getString(jsonKey);
-
-			ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
-			valueMap.put("value", jsonKey);
-			valueMap.put("text", jsonValue);
-			resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-		}
-	}
-}
-2222222222222222222222222222222222222222222222222222222222222222222222222222222222222
+11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111
 package au.com.cfs.winged.servlets;
 
 import au.com.cfs.winged.core.services.DynamicFundService;
@@ -189,8 +68,12 @@ import java.util.List;
 
 @Component(service = Servlet.class, property = {
         Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
+        "sling.servlet.paths=/bin/jsonDataDropdown",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET,
+        "sling.servlet.selectors=products",
+        "sling.servlet.selectors=years",
+        "sling.servlet.selectors=mainGroup",
+        "sling.servlet.extensions=json"
 })
 public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
@@ -201,148 +84,51 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
     @Override
     protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
-        List<Resource> productList = new ArrayList<>();
-        List<Resource> yearList = new ArrayList<>();
-        List<Resource> mainGroupList = new ArrayList<>();
-
-        try {
-            ResourceResolver resourceResolver = request.getResourceResolver();
-            Resource resource = resourceResolver
-                    .getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-            Asset asset = resource.adaptTo(Asset.class);
-            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
-
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
-
-            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-
-            String companyCode = jsonObject.getString("companyCode");
-            String api = jsonObject.getString("api");
-            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
-
-            dynamicFundService.setCompanyCode(companyCode);
-            dynamicFundService.setApi(api);
-            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
-
-            // Process and set products data
-            addItemsToResourceList(jsonObject.getJSONObject("products"), resourceResolver, productList);
-            DataSource productDataSource = new SimpleDataSource(productList.iterator());
-            request.setAttribute(DataSource.class.getName() + "_products", productDataSource);
-
-            // Process and set years data
-            addItemsToResourceList(jsonObject.getJSONObject("years"), resourceResolver, yearList);
-            DataSource yearDataSource = new SimpleDataSource(yearList.iterator());
-            request.setAttribute(DataSource.class.getName() + "_years", yearDataSource);
-
-            // Process and set mainGroup data
-            addItemsToResourceList(jsonObject.getJSONObject("mainGroup"), resourceResolver, mainGroupList);
-            DataSource mainGroupDataSource = new SimpleDataSource(mainGroupList.iterator());
-            request.setAttribute(DataSource.class.getName() + "_mainGroup", mainGroupDataSource);
-
-        } catch (JSONException | IOException e) {
-            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
-        }
-    }
-
-    private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
-        Iterator<String> jsonKeys = jsonObject.keys();
-
-        while (jsonKeys.hasNext()) {
-            String jsonKey = jsonKeys.next();
-            String jsonValue = jsonObject.getString(jsonKey);
-
-            ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
-            valueMap.put("value", jsonKey);
-            valueMap.put("text", jsonValue);
-            resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-        }
-    }
-}
-333333333333333333333333333333333333333333333333333333333333333333333333333333
-package au.com.cfs.winged.servlets;
-
-import au.com.cfs.winged.core.services.DynamicFundService;
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.dam.api.Asset;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-@Component(service = Servlet.class, property = {
-        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
-})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-    @Reference
-    private transient DynamicFundService dynamicFundService;
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
         List<Resource> resourceList = new ArrayList<>();
-        try {
-            ResourceResolver resourceResolver = request.getResourceResolver();
-            Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-            Asset asset = resource.adaptTo(Asset.class);
-            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+        String[] selectors = request.getRequestPathInfo().getSelectors();
 
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
+        if (selectors == null || selectors.length == 0) {
+            LOGGER.error("No selectors provided.");
+            response.setStatus(SlingHttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+
+        String jsonSelector = selectors[0]; // assuming only one selector is used at a time
+        ResourceResolver resourceResolver = request.getResourceResolver();
+
+        try {
+            Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
+            if (resource == null) {
+                LOGGER.error("Resource not found.");
+                response.setStatus(SlingHttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+
+            Asset asset = resource.adaptTo(Asset.class);
+            if (asset == null) {
+                LOGGER.error("Asset adaptation failed.");
+                response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+
+            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
+            if (content == null) {
+                LOGGER.error("Failed to read asset content.");
+                response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+            }
+
+            StringBuilder stringBuilder = new StringBuilder();
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8))) {
+                String eachLine;
+                while ((eachLine = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(eachLine);
+                }
             }
 
             JSONObject jsonObject = new JSONObject(stringBuilder.toString());
 
-            String companyCode = jsonObject.getString("companyCode");
-            String api = jsonObject.getString("api");
-            String fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
-
-            dynamicFundService.setCompanyCode(companyCode);
-            dynamicFundService.setApi(api);
-            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
-
-            // Get the type parameter
-            String type = request.getParameter("type");
-
-            switch (type) {
+            switch (jsonSelector) {
                 case "products":
                     addItemsToResourceList(jsonObject.getJSONObject("products"), resourceResolver, resourceList);
                     break;
@@ -353,15 +139,17 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
                     addItemsToResourceList(jsonObject.getJSONObject("mainGroup"), resourceResolver, resourceList);
                     break;
                 default:
-                    LOGGER.error("Invalid type parameter: {}", type);
-                    break;
+                    LOGGER.error("Invalid selector: {}", jsonSelector);
+                    response.setStatus(SlingHttpServletResponse.SC_BAD_REQUEST);
+                    return;
             }
 
             DataSource dataSource = new SimpleDataSource(resourceList.iterator());
             request.setAttribute(DataSource.class.getName(), dataSource);
 
         } catch (JSONException | IOException e) {
-            LOGGER.error("Error in Json Data Exporting : {}", e.getMessage());
+            LOGGER.error("Error in JSON Data Exporting: {}", e.getMessage(), e);
+            response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -379,239 +167,5 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
         }
     }
 }
-44444444444444444444444444444444444444444444444444444444444444
-package au.com.cfs.winged.servlets;
 
-import au.com.cfs.winged.core.services.DynamicFundService;
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.dam.api.Asset;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-@Component(service = Servlet.class, property = {
-        Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown",
-        "sling.servlet.paths=" + "/bin/jsonDataDropdown",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET
-})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-    @Reference
-    private transient DynamicFundService dynamicFundService;
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-        List<Resource> resourceList = new ArrayList<>();
-        try {
-            ResourceResolver resourceResolver = request.getResourceResolver();
-            Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-            if (resource == null) {
-                LOGGER.error("Resource not found: /content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-                return;
-            }
-
-            Asset asset = resource.adaptTo(Asset.class);
-            if (asset == null) {
-                LOGGER.error("Failed to adapt resource to Asset: {}", resource.getPath());
-                return;
-            }
-
-            InputStream content = asset.getOriginal().adaptTo(InputStream.class);
-            if (content == null) {
-                LOGGER.error("Failed to get InputStream from asset: {}", asset.getPath());
-                return;
-            }
-
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
-
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
-
-            JSONObject jsonObject = new JSONObject(stringBuilder.toString());
-            String companyCode = jsonObject.optString("companyCode", null);
-            String api = jsonObject.optString("api", null);
-            String fundLinkBaseUrl = jsonObject.optString("fundLinkBaseUrl", null);
-
-            if (companyCode == null || api == null || fundLinkBaseUrl == null) {
-                LOGGER.error("Missing required JSON fields: companyCode, api, or fundLinkBaseUrl");
-                return;
-            }
-
-            dynamicFundService.setCompanyCode(companyCode);
-            dynamicFundService.setApi(api);
-            dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
-
-            String type = request.getParameter("type");
-            if (type == null) {
-                LOGGER.error("Missing required request parameter: type");
-                return;
-            }
-
-            JSONObject typeJson = jsonObject.optJSONObject(type);
-            if (typeJson == null) {
-                LOGGER.error("No data found for the requested type: {}", type);
-                return;
-            }
-
-            addItemsToResourceList(typeJson, resourceResolver, resourceList);
-
-            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), dataSource);
-
-        } catch (JSONException | IOException e) {
-            LOGGER.error("Error in Json Data Exporting: {}", e.getMessage(), e);
-        }
-    }
-
-    private void addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver, List<Resource> resourceList) throws JSONException {
-        Iterator<String> jsonKeys = jsonObject.keys();
-        while (jsonKeys.hasNext()) {
-            String jsonKey = jsonKeys.next();
-            String jsonValue = jsonObject.getString(jsonKey);
-
-            ValueMap valueMap = new ValueMapDecorator(new HashMap<>());
-            valueMap.put("value", jsonKey);
-            valueMap.put("text", jsonValue);
-            resourceList.add(new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", valueMap));
-        }
-    }
-}
-55555555555555555555555555555555555555555555555555555555555555555555555555555
-package au.com.cfs.winged.servlets;
-
-import au.com.cfs.winged.core.models.DynamicFundCardModel;
-import au.com.cfs.winged.core.services.DynamicFundService;
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.models.factory.ModelFactory;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.json.JSONException;
-import org.json.JSONObject;
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
-public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
-
-    @Reference
-    private ModelFactory modelFactory;
-
-    @Reference
-    private DynamicFundService dynamicFundService;
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-
-        try {
-            // Get the DynamicFundCardModel instance
-            DynamicFundCardModel dynamicFundCardModel = modelFactory.getModelFromRequest(request, request.getResource(), DynamicFundCardModel.class);
-
-            // Fetching dropdown values from the model
-            String mainGroup = dynamicFundCardModel.getMainGroup();
-            String product = dynamicFundCardModel.getProduct();
-            String year = dynamicFundCardModel.getYear();
-
-            // Fetching JSON data based on dropdown values
-            JSONObject jsonObject = fetchJsonData(request.getResourceResolver(), "/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
-
-            // Adding JSON data to the resource list
-            List<Resource> resourceList = addItemsToResourceList(jsonObject, request.getResourceResolver());
-
-            // Creating DataSource and setting it as an attribute
-            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), dataSource);
-        } catch (Exception e) {
-            LOGGER.error("Error in retrieving or processing data: {}", e.getMessage());
-        }
-    }
-
-    private JSONObject fetchJsonData(ResourceResolver resourceResolver, String path) throws IOException, JSONException {
-        Resource resource = resourceResolver.getResource(path);
-        if (resource != null) {
-            InputStream content = resource.adaptTo(InputStream.class);
-            StringBuilder stringBuilder = new StringBuilder();
-            String eachLine;
-            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
-
-            while ((eachLine = bufferedReader.readLine()) != null) {
-                stringBuilder.append(eachLine);
-            }
-
-            return new JSONObject(stringBuilder.toString());
-        }
-        return null;
-    }
-
-    private List<Resource> addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver) throws JSONException {
-        List<Resource> resourceList = new ArrayList<>();
-        if (jsonObject != null) {
-            Iterator<String> jsonKeys = jsonObject.keys();
-
-            while (jsonKeys.hasNext()) {
-                String jsonKey = jsonKeys.next();
-                String jsonValue = jsonObject.getString(jsonKey);
-
-                HashMap<String, Object> properties = new HashMap<>();
-                properties.put("value", jsonKey);
-                properties.put("text", jsonValue);
-
-                Resource itemResource = new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", new ValueMapDecorator(properties));
-                resourceList.add(itemResource);
-            }
-        }
-        return resourceList;
-    }
-}
 
