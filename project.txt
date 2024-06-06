@@ -507,3 +507,111 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
         }
     }
 }
+55555555555555555555555555555555555555555555555555555555555555555555555555555
+package au.com.cfs.winged.servlets;
+
+import au.com.cfs.winged.core.models.DynamicFundCardModel;
+import au.com.cfs.winged.core.services.DynamicFundService;
+import com.adobe.granite.ui.components.ds.DataSource;
+import com.adobe.granite.ui.components.ds.SimpleDataSource;
+import com.adobe.granite.ui.components.ds.ValueMapResource;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.models.factory.ModelFactory;
+import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.json.JSONException;
+import org.json.JSONObject;
+import javax.servlet.Servlet;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+
+@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
+public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
+
+    @Reference
+    private ModelFactory modelFactory;
+
+    @Reference
+    private DynamicFundService dynamicFundService;
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+
+        try {
+            // Get the DynamicFundCardModel instance
+            DynamicFundCardModel dynamicFundCardModel = modelFactory.getModelFromRequest(request, request.getResource(), DynamicFundCardModel.class);
+
+            // Fetching dropdown values from the model
+            String mainGroup = dynamicFundCardModel.getMainGroup();
+            String product = dynamicFundCardModel.getProduct();
+            String year = dynamicFundCardModel.getYear();
+
+            // Fetching JSON data based on dropdown values
+            JSONObject jsonObject = fetchJsonData(request.getResourceResolver(), "/content/dam/cfs-winged/fpjson/dynamicFundCard.json");
+
+            // Adding JSON data to the resource list
+            List<Resource> resourceList = addItemsToResourceList(jsonObject, request.getResourceResolver());
+
+            // Creating DataSource and setting it as an attribute
+            DataSource dataSource = new SimpleDataSource(resourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), dataSource);
+        } catch (Exception e) {
+            LOGGER.error("Error in retrieving or processing data: {}", e.getMessage());
+        }
+    }
+
+    private JSONObject fetchJsonData(ResourceResolver resourceResolver, String path) throws IOException, JSONException {
+        Resource resource = resourceResolver.getResource(path);
+        if (resource != null) {
+            InputStream content = resource.adaptTo(InputStream.class);
+            StringBuilder stringBuilder = new StringBuilder();
+            String eachLine;
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+
+            while ((eachLine = bufferedReader.readLine()) != null) {
+                stringBuilder.append(eachLine);
+            }
+
+            return new JSONObject(stringBuilder.toString());
+        }
+        return null;
+    }
+
+    private List<Resource> addItemsToResourceList(JSONObject jsonObject, ResourceResolver resourceResolver) throws JSONException {
+        List<Resource> resourceList = new ArrayList<>();
+        if (jsonObject != null) {
+            Iterator<String> jsonKeys = jsonObject.keys();
+
+            while (jsonKeys.hasNext()) {
+                String jsonKey = jsonKeys.next();
+                String jsonValue = jsonObject.getString(jsonKey);
+
+                HashMap<String, Object> properties = new HashMap<>();
+                properties.put("value", jsonKey);
+                properties.put("text", jsonValue);
+
+                Resource itemResource = new ValueMapResource(resourceResolver, new ResourceMetadata(), "nt:unstructured", new ValueMapDecorator(properties));
+                resourceList.add(itemResource);
+            }
+        }
+        return resourceList;
+    }
+}
+
