@@ -33,7 +33,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
-@Component(service = Servlet.class, property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", "sling.servlet.paths=" + "/bin/jsonDataDropdown", "sling.servlet.methods=" + HttpConstants.METHOD_GET})
+@Component(
+service = Servlet.class, 
+property = {Constants.SERVICE_DESCRIPTION + "= Json Data in dynamic Dropdown", 
+"sling.servlet.paths=" + "/bin/jsonDataDropdown", 
+"sling.servlet.methods=" + HttpConstants.METHOD_GET,
+"sling.servlet.selectors=mainGroup",
+"sling.servlet.selectors=products",
+"sling.servlet.selectors=years"
+})
 public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JsonDataDropdownServlet.class);
