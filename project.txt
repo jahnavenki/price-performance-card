@@ -168,4 +168,4 @@ public class JsonDataDropdownServlet extends SlingSafeMethodsServlet {
     }
 }
 
-
+https://redquark.org/aem/day-17-granite-datasources/
