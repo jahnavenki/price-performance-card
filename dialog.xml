@@ -1,21 +1,25 @@
 package au.com.cfs.winged.core.services;
 
 import au.com.cfs.winged.core.common.constants.ApplicationConstants;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.apache.sling.api.resource.Resource;
 import org.apache.sling.api.resource.ResourceResolver;
 import org.osgi.service.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.json.JSONArray;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 
 @Component(service = DynamicFundService.class)
 public class DynamicFundService {
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicFundService.class);
+
     private String companyCode;
     private String api;
     private String fundLinkBaseUrl;
@@ -46,24 +50,47 @@ public class DynamicFundService {
 
     public void fetchAndSetValues(ResourceResolver resourceResolver) {
         Resource resource = resourceResolver.getResource(ApplicationConstants.END_POINT_LIST_PATH);
-        if (resource != null) {
-            try (InputStream inputStream = resource.adaptTo(InputStream.class);
-                 InputStreamReader reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
+        if (resource == null) {
+            LOG.error("Resource not found at path: {}", ApplicationConstants.END_POINT_LIST_PATH);
+            return;
+        }
 
-                JsonArray jsonArray = JsonParser.parseReader(reader).getAsJsonArray();
-                Map<String, String> values = new HashMap<>();
-                for (int i = 0; i < jsonArray.size(); i++) {
-                    JsonObject jsonObject = jsonArray.get(i).getAsJsonObject();
-                    String text = jsonObject.get("text").getAsString();
-                    String value = jsonObject.get("value").getAsString();
-                    values.put(text, value);
-                }
-                setCompanyCode(values.get("companyCode"));
-                setApi(values.get("api"));
-                setFundLinkBaseUrl(values.get("fundLinkBaseUrl"));
-            } catch (Exception e) {
-                e.printStackTrace();
+        try {
+            // Adapt this to InputStream
+            InputStream content = Objects.requireNonNull(resource).adaptTo(InputStream.class);
+            if (content == null) {
+                LOG.error("Failed to adapt resource to InputStream at path: {}", ApplicationConstants.END_POINT_LIST_PATH);
+                return;
             }
+
+            // Read all the data in the json file as a string
+            StringBuilder jsonContent = new StringBuilder();
+            BufferedReader jsonReader = new BufferedReader(
+                    new InputStreamReader(content, StandardCharsets.UTF_8));
+
+            // Loop through each line
+            String line;
+            while ((line = jsonReader.readLine()) != null) {
+                jsonContent.append(line);
+            }
+
+            // Parse JSON content
+            JSONArray jsonArray = new JSONArray(jsonContent.toString());
+            Map<String, String> data = new TreeMap<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                data.put(jsonArray.getJSONObject(i).getString("text"),
+                        jsonArray.getJSONObject(i).getString("value"));
+            }
+
+            // Set values
+            setCompanyCode(data.get("companyCode"));
+            setApi(data.get("api"));
+            setFundLinkBaseUrl(data.get("fundLinkBaseUrl"));
+
+            LOG.info("Values fetched and set successfully: companyCode={}, api={}, fundLinkBaseUrl={}",
+                    companyCode, api, fundLinkBaseUrl);
+        } catch (Exception e) {
+            LOG.error("Exception occurred while fetching and setting values", e);
         }
     }
 }
