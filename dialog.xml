@@ -1,59 +1,138 @@
-<sly data-sly-use.templates="core/wcm/components/commons/v1/templates.html"></sly>
-<sly data-sly-use.dynamicModel="au.com.cfs.winged.core.models.DynamicFundCardModel"></sly>
-<div
-        data-sly-test="${dynamicModel.apir}"
-        data-fp-apir="${dynamicModel.apir}"
-        data-cmp-is="pricePerformanceCard"
-        data-fp-companyCode="${dynamicModel.companyCode}"
-        data-fp-mainGroup="${dynamicModel.mainGroup}"
-        data-fp-api="${dynamicModel.api}"
-        data-fp-product="${dynamicModel.product}"
-        data-fp-year="${dynamicModel.year}"
-        data-fp-dateText="${dynamicModel.inception}"
-        data-fundlink-baseurl="${dynamicModel.fundLinkBaseUrl}"
-        class="CardPromo CardPromo--layout-${dynamicModel.layout ? dynamicModel.layout : 'vertical'} ${dynamicModel.cardSize == 'large' ? 'CardPromo--cardType-fund CardPromo--paddingSize-large ' : ''} ${dynamicModel.cardSize == 'small' ? 'CardPromo--cardType-fund CardPromo--paddingSize-small' : ''} ${dynamicModel.imageUrl ? '' : 'CardPromo--minHeightNoImg'}"
->
-    <div class="CardPromo__Container ${dynamicModel.horizontalLine && 'horizondalLine'} ${dynamicModel.verticalLine && 'verticalLine'}">
-        <div class="CardPromo__Image" data-sly-test="${dynamicModel.imageUrl}">
-            <img alt="" src="${dynamicModel.imageUrl @context='html'}"/>
-        </div>
-        <div class="CardPromo__Content" data-cmp-hook-shimmer>
-            <div class="Shimmer__Header FP_Shimmer"></div>
-            <div class="Shimmer__Super FP_Shimmer"></div>
-            <div class="Shimmer_ContentCopy FP_Shimmer"></div>
-        </div>
-        <div class="CardPromo__Content inactive" data-cmp-hook-content>
-            <h3 class="CardPromo__Heading" data-sly-test="${dynamicModel.apir}">
-                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout != 'horizontal'}"
-                      x-cq-linkchecker="valid"> </span>
+package au.com.cfs.winged.core.services;
 
-                <span data-cmp-hook-fpheader data-sly-test="${dynamicModel.layout == 'horizontal'}"></span>
-            </h3>
+import com.day.cq.dam.api.Asset;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.osgi.service.component.annotations.Component;
 
-            <h3 data-cmp-hook-fpsuperheader class="CardPromo__Super" data-sly-test="${dynamicModel.apir}"></h3>
-            <div data-cmp-hook-fpsuperdesc class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.apir}"></div>
-            <div class="CardPromo__ContentCopy" data-sly-test="${dynamicModel.content}">${dynamicModel.content @
-                context='unsafe'}
-            </div>
-            <div class="CardPromo__Buttons" data-cmp-hook-fpbutton data-sly-list.cta="${dynamicModel.ctas}">
-                <div class="CardPromo__Button" data-fp-button="${cta.href}">
-                    <sly
-                            data-sly-use.buttonTemp="/apps/cfs-winged/components/content/button/buttonTemp.html"
-                            data-sly-call="${buttonTemp.buttonTemplate @ buttonLabel=cta.label,
-                      href=cta.href,
-                      target=cta.target,
-                      theme=cta.theme,
-                      type=cta.type,
-                      trackingName=cta.trackingName
-                      }"
-                    ></sly>
-                </div>
-            </div>
-        </div>
-        <div class="CardPromo__Content inactive" data-cmp-hook-fperror>
-            <div class="FP__Error"></div>
-        </div>
-    </div>
-</div>
-<sly data-sly-call="${templates.placeholder @ isEmpty = !dynamicModel.apir, classAppend = ''}"></sly>
-...............................................................................................
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.TreeMap;
+
+@Component(service = DynamicFundService.class)
+public class DynamicFundService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicFundService.class);
+
+    private String companyCode;
+    private String api;
+    private String fundLinkBaseUrl;
+
+    public String getCompanyCode() {
+        return companyCode;
+    }
+
+    public String getApi() {
+        return api;
+    }
+
+    public String getFundLinkBaseUrl() {
+        return fundLinkBaseUrl;
+    }
+
+    public void fetchAndSetValues(ResourceResolver resourceResolver) throws IOException, JSONException {
+        Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/enpoint.json");
+        Asset asset = resource.adaptTo(Asset.class);
+        Resource original;
+        original = asset.getOriginal();
+        InputStream jsonContent = original.adaptTo(InputStream.class);
+        StringBuilder stringBuilder = new StringBuilder();
+        String eachLine;
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(jsonContent, StandardCharsets.UTF_8));
+
+        while((eachLine = bufferedReader.readLine()) != null) {
+            stringBuilder.append(eachLine);
+        }
+        JSONArray jsonArray = new JSONArray(stringBuilder.toString());
+        Map<String, String> data = new TreeMap<>();
+        for(int i = 0; i < jsonArray.length(); i++) {
+            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
+        }
+
+        // Set values directly here
+        setCompanyCode(data.get("companyCode"));
+        setApi(data.get("api"));
+        setFundLinkBaseUrl(data.get("fundLinkBaseUrl"));
+    }
+
+    // Setters for companyCode, api, and fundLinkBaseUrl
+    private void setCompanyCode(String companyCode) {
+        this.companyCode = companyCode;
+    }
+
+    private void setApi(String api) {
+        this.api = api;
+    }
+
+    private void setFundLinkBaseUrl(String fundLinkBaseUrl) {
+        this.fundLinkBaseUrl = fundLinkBaseUrl;
+    }
+}
+.........................................................
+                package au.com.cfs.winged.core.models;
+
+import au.com.cfs.winged.core.models.common.ButtonsModel;
+import au.com.cfs.winged.core.services.DynamicFundService;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.models.annotations.DefaultInjectionStrategy;
+import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.OSGiService;
+import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+
+@Model(adaptables = SlingHttpServletRequest.class, adapters = DynamicFundCardModel.class, defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
+public class DynamicFundCardModel extends ButtonsModel {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicFundCardModel.class);
+
+    // Inject ResourceResolver
+    @Inject
+    private ResourceResolver resourceResolver;
+
+    // Inject DynamicFundService using @OSGiService
+    @OSGiService
+    private DynamicFundService dynamicFundService;
+
+    // PostConstruct method to fetch and set values
+    @PostConstruct
+    protected void init() {
+        // Fetch and set values from DynamicFundService
+        if (dynamicFundService != null) {
+            try {
+                dynamicFundService.fetchAndSetValues(resourceResolver);
+            } catch (Exception e) {
+                LOG.error("Error initializing DynamicFundCardModel", e);
+            }
+        } else {
+            LOG.warn("DynamicFundService reference is null");
+        }
+    }
+
+    // Getter methods for accessing properties set by DynamicFundService
+    public String getCompanyCode() {
+        return dynamicFundService != null ? dynamicFundService.getCompanyCode() : null;
+    }
+
+    public String getApi() {
+        return dynamicFundService != null ? dynamicFundService.getApi() : null;
+    }
+
+    public String getFundLinkBaseUrl() {
+        return dynamicFundService != null ? dynamicFundService.getFundLinkBaseUrl() : null;
+    }
+
+    // Other properties and methods...
+
+}
