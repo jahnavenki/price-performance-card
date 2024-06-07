@@ -291,30 +291,21 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 	}
 }
 ..............................
-        String companyCode = null;
-        String api = null;
-        String fundLinkBaseUrl = null;
-
-        // Loop through the JSON array to find the required values
-        for (int i = 0; i < jsonArray.length(); i++) {
-            JSONObject jsonObject = jsonArray.getJSONObject(i);
-            if (jsonObject.has("companycode")) {
-                companyCode = jsonObject.getString("companycode");
-            }
-            if (jsonObject.has("api")) {
-                api = jsonObject.getString("api");
-            }
-            if (jsonObject.has("fundLinkBaseUrl")) {
-                fundLinkBaseUrl = jsonObject.getString("fundLinkBaseUrl");
-            }
-        }
-
+if (END_POINT_LIST.equals(dropdownSelector)) {
+    JSONObject jsonObject = jsonArray.optJSONObject(0); // Assuming the required values are in the first object
+    if (jsonObject != null) {
+        String companyCode = jsonObject.optString("companycode", null);
+        String api = jsonObject.optString("api", null);
+        String fundLinkBaseUrl = jsonObject.optString("fundLinkBaseUrl", null);
         if (companyCode != null && api != null && fundLinkBaseUrl != null) {
             // Set values to DynamicFundService
             dynamicFundService.setCompanyCode(companyCode);
             dynamicFundService.setApi(api);
             dynamicFundService.setFundLinkBaseUrl(fundLinkBaseUrl);
         } else {
-            // Handle the case where one or more values are not found in the JSON
-            LOGGER.error("{}: companyCode, api, or fundLinkBaseUrl not found in JSON");
+            LOGGER.error("{}: companyCode, api, or fundLinkBaseUrl not found in endpoint JSON", TAG);
         }
+    } else {
+        LOGGER.error("{}: JSON array is empty or does not contain valid JSON object", TAG);
+    }
+}
