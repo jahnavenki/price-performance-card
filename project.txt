@@ -309,3 +309,18 @@ if (END_POINT_LIST.equals(dropdownSelector)) {
         LOGGER.error("{}: JSON array is empty or does not contain valid JSON object", TAG);
     }
 }
+.......................................
+[
+    {
+        "text" : "companyCode",
+        "value": "001"
+    },
+    {
+        "text" : "api",
+        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
+    },
+    {
+        "text" : "fundLinkBaseUrl",
+        "value": "https://www.colonialfirststate.com.au"
+    }
+]
