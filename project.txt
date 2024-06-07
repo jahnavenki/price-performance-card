@@ -305,3 +305,18 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 		return jsonResource;
 	}
 }
+..............................
+[
+    {
+        "text" : "companyCode",
+        "value": "001"
+    },
+    {
+        "text" : "api",
+        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
+    },
+    {
+        "text" : "fundLinkBaseUrl",
+        "value": "https://www.colonialfirststate.com.au"
+    }
+]
