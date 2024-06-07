@@ -315,17 +315,25 @@ if (END_POINT_LIST.equals(dropdownSelector)) {
     }
 }
 .......................................
-[
-    {
-        "text" : "companyCode",
-        "value": "001"
-    },
-    {
-        "text" : "api",
-        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
-    },
-    {
-        "text" : "fundLinkBaseUrl",
-        "value": "https://www.colonialfirststate.com.au"
+if (END_POINT_LIST.equals(dropdownSelector)) {
+    for (int i = 0; i < jsonArray.length(); i++) {
+        JSONObject jsonObject = jsonArray.optJSONObject(i);
+        if (jsonObject != null) {
+            String text = jsonObject.optString("text", "");
+            String value = jsonObject.optString("value", "");
+            switch (text) {
+                case "companyCode":
+                    dynamicFundService.setCompanyCode(value);
+                    break;
+                case "api":
+                    dynamicFundService.setApi(value);
+                    break;
+                case "fundLinkBaseUrl":
+                    dynamicFundService.setFundLinkBaseUrl(value);
+                    break;
+                default:
+                    LOGGER.warn("{}: Unrecognized field '{}' in endpoint JSON", TAG, text);
+            }
+        }
     }
-]
+}
