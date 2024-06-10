@@ -1,3 +1,4 @@
+Enter Inception Text: Enter the inception text. To include the date dynamically, use the #date# placeholder. For example, enter "Inception Date: #date#".
 Dynamic Funds Section
 The Dynamic Funds section includes several fields for configuring fund-related information, which are used to fetch performance data dynamically from an API endpoint:
 
