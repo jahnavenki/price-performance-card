@@ -1,322 +1,61 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
-          jcr:primaryType="nt:unstructured">
-    <items jcr:primaryType="nt:unstructured">
-        <accordion
-                granite:class="js-cq-IPEPlugin-container"
-                jcr:primaryType="nt:unstructured"
-                sling:resourceType="granite/ui/components/coral/foundation/accordion"
-                variant="quiet">
-            <items jcr:primaryType="nt:unstructured">
-                <general
-                        jcr:primaryType="nt:unstructured"
-                        jcr:title="General"
-                        sling:resourceType="granite/ui/components/coral/foundation/container"
-                        active="true">
-                    <items jcr:primaryType="nt:unstructured">
-                        <layout
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                                fieldLabel="Layout"
-                                name="./layout">
-                            <items jcr:primaryType="nt:unstructured">
-                                <vertical
-                                        jcr:primaryType="nt:unstructured"
-                                        text="Vertical"
-                                        value="vertical"/>
-                                <horizontal
-                                        jcr:primaryType="nt:unstructured"
-                                        text="Horizontal"
-                                        value="horizontal"/>
-                            </items>
-                        </layout>
-                        <content
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="cq/gui/components/authoring/dialog/richtext"
-                                fieldLabel="Description"
-                                name="./content"
-                                useFixedInlineToolbar="{Boolean}true">
-                            <rtePlugins
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
-                            <uiSettings
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
-                        </content>
-                        <horizontalLine
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/foundation/form/checkbox"
-                                fieldDescription="Add a checkbox"
-                                name="./horizontalLine"
-                                text="Horizontal Line"
-                                value="{Boolean}true"/>
-                        <verticalLine
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/foundation/form/checkbox"
-                                fieldDescription="Add a checkbox"
-                                name="./verticalLine"
-                                text="Vertical Line"
-                                value="{Boolean}true"/>
-                    </items>
-                </general>
-                <media
-                        jcr:primaryType="nt:unstructured"
-                        jcr:title="Media"
-                        sling:resourceType="granite/ui/components/coral/foundation/container">
-                    <items jcr:primaryType="nt:unstructured">
-                        <imageUrl
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
-                                fieldDescription="Add a Image from the DAM section for the card"
-                                fieldLabel="Image Path (from DAM)"
-                                name="./imageUrl"
-                                rootPath="/content/dam"/>
-                    </items>
-                </media>
-                <buttons
-                        jcr:primaryType="nt:unstructured"
-                        jcr:title="Buttons"
-                        sling:resourceType="granite/ui/components/coral/foundation/container">
-                    <items jcr:primaryType="nt:unstructured">
-                        <actions
-                                granite:class="cmp-teaser__editor-multifield_actions"
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
-                                composite="{Boolean}true"
-                                fieldLabel="Add Buttons">
-                            <field
-                                    granite:class="multifield-item-boarder-bottom"
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="granite/ui/components/coral/foundation/container"
-                                    name="./actions">
-                                <items
-                                        jcr:primaryType="nt:unstructured"
-                                        sling:resourceSuperType="/apps/cfs-winged/global/buttonDialog/items"/>
-                            </field>
-                        </actions>
-                    </items>
-                </buttons>
-                <dynamicFund
-                        jcr:primaryType="nt:unstructured"
-                        jcr:title="Dynamic Funds"
-                        sling:resourceType="granite/ui/components/coral/foundation/container"
-                        active="true">
-                    <items jcr:primaryType="nt:unstructured">
-                        <mainGroup
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                                fieldDescription="Select the main group dropdown"
-                                fieldLabel="Select Main Group"
-                                name="./mainGroup">
-                            <datasource
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-                                    dropdownSelector="mainGroupList"/>
-                        </mainGroup>
-                        <products
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                                fieldDescription="Select the main group dropdown"
-                                fieldLabel="Select Product"
-                                name="./product">
-                            <datasource
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-                                    dropdownSelector="productsList"/>
-                        </products>
-                        <apir
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                                fieldDescription="Author the unique APiR Code to get the net performance figures"
-                                fieldLabel="APiR Code"
-                                name="./apir"
-                                required="{Boolean}true"/>
-                        <years
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                                fieldDescription="Select the main group dropdown"
-                                fieldLabel="Select Year"
-                                name="./year">
-                            <datasource
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-                                    dropdownSelector="yearsList"/>
-                        </years>
-                        <inceptionText
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
-                                fieldDescription="Enter the plain text"
-                                fieldLabel="Enter Inception Text"
-                                name="./inception"/>
-                        <endPoint
-                                jcr:primaryType="nt:unstructured"
-                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
-                                fieldDescription="Select the End Point dropdown"
-                                fieldLabel="End Point"
-                                name="./endpoint">
-                            <datasource
-                                    jcr:primaryType="nt:unstructured"
-                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-                                    dropdownSelector="endPointList"/>
-                        </endPoint>
-                    </items>
-                </dynamicFund>
-            </items>
-        </accordion>
-    </items>
-</jcr:root>
+Dynamic Funds Section
+The Dynamic Funds section includes several fields for configuring fund-related information, which are used to fetch performance data dynamically from an API endpoint:
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-package au.com.cfs.winged.servlets;
+Select Main Group
 
-import au.com.cfs.winged.core.services.DynamicFundService;
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.dam.api.Asset;
-import com.day.cq.dam.api.Rendition;
-import com.day.cq.dam.commons.util.DamUtil;
-import org.apache.commons.collections4.Transformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.jackrabbit.JcrConstants;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+Field Label: Select Main Group
+Description: Select the main group from the dropdown. This selection will be used to fetch performance data dynamically.
+Datasource: Populated dynamically based on JSON data.
+Select Product
 
-import javax.servlet.Servlet;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+Field Label: Select Product
+Description: Select the product from the dropdown. This selection will be used to fetch performance data dynamically.
+Datasource: Populated dynamically based on JSON data.
+APiR Code
 
-import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
-import static au.com.cfs.winged.servlets.DynamicFundDataSourceServlet.RESOURCE_TYPE;
-import static au.com.cfs.winged.servlets.DynamicFundDataSourceServlet.SERVICE_NAME;
-import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
+Field Label: APiR Code
+Description: Enter the unique APiR code to fetch the net performance figures from the API.
+Type: Textfield
+Required: Yes
+Select Year
 
+Field Label: Select Year
+Description: Select the year from the dropdown. This selection will be used to fetch performance data dynamically.
+Datasource: Populated dynamically based on JSON data.
+Enter Inception Text
 
-@Component(service = Servlet.class, property = {Constants.SERVICE_ID + EQUALS + SERVICE_NAME, SLING_SERVLET_RESOURCE_TYPES + EQUALS + RESOURCE_TYPE})
-public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
+Field Label: Enter Inception Text
+Description: Enter plain text for the inception.
+Type: Textfield
+End Point
 
-	protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
-	protected static final String RESOURCE_TYPE = "/apps/cfs-winged/dynamicFund/dropdowns";
-	private static final long serialVersionUID = 4235730140092283425L;
-	private static final String TAG = DynamicFundDataSourceServlet.class.getSimpleName();
-	private static final Logger LOGGER = LoggerFactory.getLogger(DynamicFundDataSourceServlet.class);
+Field Label: End Point
+Description: Select the endpoint from the dropdown. This selection will be used to fetch performance data dynamically.
+Datasource: Populated dynamically based on JSON data.
+Authoring Steps
+Open the Dialog:
 
-	@Reference
-	private DynamicFundService dynamicFundService;
+Navigate to the component and open the dialog by clicking the wrench icon.
+Configure General Settings:
 
-	@Override
-	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-		try {
+Select the layout style (Vertical or Horizontal).
+Add rich text content for the description.
+Check the options for Horizontal Line and Vertical Line if needed.
+Configure Media:
 
-			ResourceResolver resourceResolver = request.getResourceResolver();
-			Resource currentResource = request.getResource();
-			String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
-			Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
-			Asset asset = DamUtil.resolveToAsset(jsonResource);
-			Rendition originalAsset = Objects.requireNonNull(asset).getOriginal();
-			InputStream content = Objects.requireNonNull(originalAsset).adaptTo(InputStream.class);
-			StringBuilder jsonContent = new StringBuilder();
-			BufferedReader jsonReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(content), StandardCharsets.UTF_8));
-			String line;
-			while((line = jsonReader.readLine()) != null) {
-				jsonContent.append(line);
-			}
-			JSONArray jsonArray = new JSONArray(jsonContent.toString());
+Use the pathfield to select an image from the DAM.
+Add Buttons:
 
-			Map<String, String> data = new TreeMap<>();
-			for(int i = 0; i < jsonArray.length(); i++) {
-				data.put(jsonArray.getJSONObject(i).getString("text"),	jsonArray.getJSONObject(i).getString("value"));
-			}
+Click the "Add Buttons" field to add one or more buttons.
+Configure Dynamic Funds:
 
-			if(END_POINT_LIST.equals(dropdownSelector)) {
-				for(int i = 0; i < jsonArray.length(); i++) {
-					JSONObject jsonObject = jsonArray.optJSONObject(i);
-					if(jsonObject != null) {
-						String text = jsonObject.optString("text", "");
-						String value = jsonObject.optString("value", "");
-						switch(text) {
-							case "companyCode":
-								dynamicFundService.setCompanyCode(value);
-								break;
-							case "api":
-								dynamicFundService.setApi(value);
-								break;
-							case "fundLinkBaseUrl":
-								dynamicFundService.setFundLinkBaseUrl(value);
-								break;
-							default:
-								LOGGER.warn("{}: Unrecognized field '{}' in endpoint JSON", TAG, text);
-						}
-					}
-				}
-			}
-			@SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
-				String dropValue = (String) o;
-				ValueMap vm = new ValueMapDecorator(new HashMap<>());
-				vm.put("text", dropValue);
-				vm.put("value", data.get(dropValue));
-				return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-			}));
-			request.setAttribute(DataSource.class.getName(), ds);
-		} catch(IOException | JSONException e) {
-			LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
-		}
-	}
+Select the appropriate options from the Main Group, Product, Year, and End Point dropdowns. These selections will dynamically fetch performance data from the API.
+Enter the APiR code to fetch specific net performance figures.
+Enter inception text if required.
+Save and Close:
 
-	private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
-		Resource jsonResource;
-		switch(dropdownSelector) {
-			case END_POINT_LIST:
-				jsonResource = resourceResolver.getResource(END_POINT_LIST_PATH);
-				break;
-			case MAIN_GROUP_LIST:
-				jsonResource = resourceResolver.getResource(MAIN_GROUP_LIST_PATH);
-				break;
-			case PRODUCTS_LIST:
-				jsonResource = resourceResolver.getResource(PRODUCTS_LIST_PATH);
-				break;
-			case YEARS_LIST:
-				jsonResource = resourceResolver.getResource(YEARS_LIST_PATH);
-				break;
-			default:
-				throw new IllegalStateException("Unexpected value: " + dropdownSelector);
-		}
-		return jsonResource;
-	}
-}
-..............................
-[
-    {
-        "text" : "companyCode",
-        "value": "001"
-    },
-    {
-        "text" : "api",
-        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
-    },
-    {
-        "text" : "fundLinkBaseUrl",
-        "value": "https://www.colonialfirststate.com.au"
-    }
-]
+Once all fields are configured, click the "Save" button to apply the changes and close the dialog.
+Notes
+Fields with a red asterisk (*) are required and must be filled out before saving the dialog.
+The dropdowns for Main Group, Product, Year, and End Point are dynamically populated based on JSON data from the server. Ensure the data is correctly configured and available.
+The selections in the Dynamic Funds section will trigger API calls to fetch and display performance data dynamically. Ensure you have valid data and API endpoints configured.
