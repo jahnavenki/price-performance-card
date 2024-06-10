@@ -695,6 +695,12 @@ RewriteRule ^/(cfsedge/apt|cfsedge/apt.html)$  /content/dam/prospects/a/p/t/apt.
 RewriteRule ^/(cfsedge/ewl|cfsedge/ewl.html)$  /content/dam/prospects/e/w/l/ewl.pdf [L,R=301]
 RewriteRule ^/(whycfs|whycfs.html)$  /personal/super/why-choose-cfs-for-super.html [L,R=301]
 
+Vanity
 
+Destination
+
+cfs.com.au/cfsedge/member
+
+cfs.com.au/cfsedge/member.html /content/cfs-winged/au/en/cfsedge/member.htm
 
 
