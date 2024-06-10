@@ -1,3 +1,4 @@
 RewriteRule ^cfsedge/member$  /cfsedge/member.html [L,R=301]
+RewriteRule ^cfs\.com\.au/cfsedge/member$  /cfsedge/member.html [L,R=301
 http://cfs.com.au/cfsedge/member
 http://cfs.com.au/cfsedge/member.html
