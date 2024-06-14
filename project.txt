@@ -10,6 +10,7 @@ data:
       token: "${{DATADOG_API_KEY}}"
 https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/implementing/developing/log-forwarding#datadog
 
+ logs:
   - type: file
     path: "C:\\path\\to\\log\\git_log.txt"
     service: git
