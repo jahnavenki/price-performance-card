@@ -1,4 +1,11 @@
-RewriteRule ^cfsedge/member$  /cfsedge/member.html [L,R=301]
-RewriteRule ^cfs\.com\.au/cfsedge/member$  /cfsedge/member.html [L,R=301
-http://cfs.com.au/cfsedge/member
-http://cfs.com.au/cfsedge/member.html
+kind: "LogForwarding"
+version: "1"
+metadata:
+  envTypes: ["dev"]
+data:
+  dataDog:
+    default:
+      enabled: true
+      host: "http-intake.logs.datadoghq.eu"
+      token: "${{DATADOG_API_KEY}}"
+https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/implementing/developing/log-forwarding#datadog
