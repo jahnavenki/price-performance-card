@@ -8,17 +8,6 @@ data:
       enabled: true
       host: "http-intake.logs.datadoghq.eu"
       token: "${{DATADOG_API_KEY}}"
-https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/content/implementing/developing/log-forwarding#datadog
+Host name : https://app.datadoghq.com/
+API Key : 85c8344a28826920a77badada4d77927
 
-logs:
-  - type: file
-    path: "C:\\Users\\venkateswara.goud.la\\Codebase\\cfs-aem-mono\\git_log.txt"
-    service: git
-    source: git
-collect_git_logs.ps1
-git -C C:\Users\venkateswara.goud.la\Codebase\cfs-aem-mono log --since="1 minute ago" --pretty=format:"%h - %an, %ar : %s" >> C:\Users\venkateswara.goud.la\Codebase\cfs-aem-mono\git_log.txt
-
-
-
-
-C:\Users\venkateswara.goud.la\Codebase\cfs-aem-mono
