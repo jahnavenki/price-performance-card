@@ -15,3 +15,6 @@ https://experienceleague.adobe.com/en/docs/experience-manager-cloud-service/cont
     path: "C:\\path\\to\\log\\git_log.txt"
     service: git
     source: git
+
+
+C:\Users\venkateswara.goud.la\Codebase\cfs-aem-mono
