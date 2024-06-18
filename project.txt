@@ -23,5 +23,31 @@ API Key : 85c8344a28826920a77badada4d77927
   "smtp.requiretls": "$[env:SMTP_REQUIRETLS;default=false]",
   "debug.email": "$[env:SMTP_DEBUG_EMAIL;default=true]",
   "oauth.flow": "$[env:SMTP_OAUTH_FLOW;default=false]"
+}
 
 com.day.cq.mailer.DefaultMailService.cfg.json
+
+
+
+
+{
+  "kind": "LogForwarding",
+  "version": "1",
+  "metadata": {
+    "envTypes": ["dev", "stage", "prod"]
+  },
+  "data": {
+    "dataDog": {
+      "default": {
+        "enabled": true,
+        "host": "http-intake.logs.datadoghq.eu",
+        "token": "85c8344a28826920a77badada4d77927"
+      },
+      "aem": {
+        "enabled": true,
+        "host": "proxy.tunnel",
+        "port": 30443
+      }
+    }
+  }
+}
