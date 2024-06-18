@@ -51,3 +51,13 @@ com.day.cq.mailer.DefaultMailService.cfg.json
     }
   }
 }
+............................................
+dataDog:
+  default:
+    enabled: true
+    host: "http-intake.logs.datadoghq.eu"
+    token: "$[env:DATADOG_API_KEY]"
+  aem:
+    enabled: true
+    host: "$[env:AEM_PROXY_HOST;default=proxy.tunnel]"
+    port: 30443
