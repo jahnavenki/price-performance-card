@@ -11,3 +11,17 @@ data:
 Host name : https://app.datadoghq.com/
 API Key : 85c8344a28826920a77badada4d77927
 
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+{
+  "smtp.host": "$[env:AEM_PROXY_HOST;default=proxy.tunnel]",
+  "smtp.user": "$[env:SMTP_USER;default=0d007aca-b17c-4e92-85c5-bf0f1ba9df08]",
+  "smtp.password": "$[env:SMTP_PASSWORD;default=........]",
+  "smtp.port": "$[env:SMTP_PORT;default=30587]",
+  "from.address": "$[env:SMTP_FROM_ADDRESS;default=cfswebsite-np@dev.cfs.com.au]",
+  "smtp.ssl": "$[env:SMTP_SSL;default=false]",
+  "smtp.starttls": "$[env:SMTP_START_TLS;default=true]",
+  "smtp.requiretls": "$[env:SMTP_REQUIRETLS;default=false]",
+  "debug.email": "$[env:SMTP_DEBUG_EMAIL;default=true]",
+  "oauth.flow": "$[env:SMTP_OAUTH_FLOW;default=false]"
+
+com.day.cq.mailer.DefaultMailService.cfg.json
