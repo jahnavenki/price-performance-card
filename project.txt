@@ -61,3 +61,14 @@ dataDog:
     enabled: true
     host: "$[env:AEM_PROXY_HOST;default=proxy.tunnel]"
     port: 30443
+......................
+{
+  "dataDog": {
+    "default": {
+      "enabled": true,
+      "host": "$[env:AEM_PROXY_HOST;default=proxy.tunnel]",
+      "token": "$[env:DATADOG_API_KEY;default=85c8344a28826920a77badada4d77927]",
+      "port": "$[env:DATADOG_PORT;default=30443]"
+    }
+  }
+}
