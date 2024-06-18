@@ -72,3 +72,5 @@ dataDog:
     }
   }
 }
+
+com.adobe.aem.datadog.logForwarding.json
