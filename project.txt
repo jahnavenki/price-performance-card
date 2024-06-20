@@ -74,3 +74,16 @@ dataDog:
 }
 
 com.adobe.aem.datadog.logForwarding.json
+;;;;;;;;;;;;;;;;;;;;
+1. Create or Update Environment Variables
+Log in to AEM Cloud Manager.
+Navigate to the Program you want to configure.
+Open the Pipelines tab.
+Edit the Pipeline configuration where you want to add the Datadog API key.
+Add an Environment Variable named DATADOG_API_KEY and set its value to 85c8344a28826920a77badada4d77927.
+2. Modify the Configuration File
+Access the AEM Cloud Manager Code Repository where your project is stored.
+
+Navigate to the Configuration File: Typically, this would be under conf or config directories. You might need to create a new file if one does not exist.
+
+Create/Update Log Forwarding Configuration: Assuming you're using the provided YAML configuration, your log-forwarding.yaml file might look like this:
