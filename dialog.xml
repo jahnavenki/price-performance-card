@@ -1,138 +1,156 @@
-package au.com.cfs.winged.core.services;
-
-import com.day.cq.dam.api.Asset;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.osgi.service.component.annotations.Component;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.Map;
-import java.util.TreeMap;
-
-@Component(service = DynamicFundService.class)
-public class DynamicFundService {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DynamicFundService.class);
-
-    private String companyCode;
-    private String api;
-    private String fundLinkBaseUrl;
-
-    public String getCompanyCode() {
-        return companyCode;
-    }
-
-    public String getApi() {
-        return api;
-    }
-
-    public String getFundLinkBaseUrl() {
-        return fundLinkBaseUrl;
-    }
-
-    public void fetchAndSetValues(ResourceResolver resourceResolver) throws IOException, JSONException {
-        Resource resource = resourceResolver.getResource("/content/dam/cfs-winged/fpjson/enpoint.json");
-        Asset asset = resource.adaptTo(Asset.class);
-        Resource original;
-        original = asset.getOriginal();
-        InputStream jsonContent = original.adaptTo(InputStream.class);
-        StringBuilder stringBuilder = new StringBuilder();
-        String eachLine;
-        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(jsonContent, StandardCharsets.UTF_8));
-
-        while((eachLine = bufferedReader.readLine()) != null) {
-            stringBuilder.append(eachLine);
-        }
-        JSONArray jsonArray = new JSONArray(stringBuilder.toString());
-        Map<String, String> data = new TreeMap<>();
-        for(int i = 0; i < jsonArray.length(); i++) {
-            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
-        }
-
-        // Set values directly here
-        setCompanyCode(data.get("companyCode"));
-        setApi(data.get("api"));
-        setFundLinkBaseUrl(data.get("fundLinkBaseUrl"));
-    }
-
-    // Setters for companyCode, api, and fundLinkBaseUrl
-    private void setCompanyCode(String companyCode) {
-        this.companyCode = companyCode;
-    }
-
-    private void setApi(String api) {
-        this.api = api;
-    }
-
-    private void setFundLinkBaseUrl(String fundLinkBaseUrl) {
-        this.fundLinkBaseUrl = fundLinkBaseUrl;
-    }
-}
-.........................................................
-                package au.com.cfs.winged.core.models;
-
-import au.com.cfs.winged.core.models.common.ButtonsModel;
-import au.com.cfs.winged.core.services.DynamicFundService;
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.models.annotations.DefaultInjectionStrategy;
-import org.apache.sling.models.annotations.Model;
-import org.apache.sling.models.annotations.injectorspecific.OSGiService;
-import org.osgi.service.component.annotations.Reference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-
-@Model(adaptables = SlingHttpServletRequest.class, adapters = DynamicFundCardModel.class, defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
-public class DynamicFundCardModel extends ButtonsModel {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DynamicFundCardModel.class);
-
-    // Inject ResourceResolver
-    @Inject
-    private ResourceResolver resourceResolver;
-
-    // Inject DynamicFundService using @OSGiService
-    @OSGiService
-    private DynamicFundService dynamicFundService;
-
-    // PostConstruct method to fetch and set values
-    @PostConstruct
-    protected void init() {
-        // Fetch and set values from DynamicFundService
-        if (dynamicFundService != null) {
-            try {
-                dynamicFundService.fetchAndSetValues(resourceResolver);
-            } catch (Exception e) {
-                LOG.error("Error initializing DynamicFundCardModel", e);
-            }
-        } else {
-            LOG.warn("DynamicFundService reference is null");
-        }
-    }
-
-    // Getter methods for accessing properties set by DynamicFundService
-    public String getCompanyCode() {
-        return dynamicFundService != null ? dynamicFundService.getCompanyCode() : null;
-    }
-
-    public String getApi() {
-        return dynamicFundService != null ? dynamicFundService.getApi() : null;
-    }
-
-    public String getFundLinkBaseUrl() {
-        return dynamicFundService != null ? dynamicFundService.getFundLinkBaseUrl() : null;
-    }
-
-    // Other properties and methods...
-
-}
+<?xml version="1.0" encoding="UTF-8"?>
+<jcr:root xmlns:jcr="http://www.jcp.org/jcr/1.0" xmlns:nt="http://www.jcp.org/jcr/nt/1.0" xmlns:granite="http://www.adobe.com/jcr/granite/1.0" xmlns:sling="http://sling.apache.org/jcr/sling/1.0"
+          jcr:primaryType="nt:unstructured">
+    <items jcr:primaryType="nt:unstructured">
+        <accordion
+                granite:class="js-cq-IPEPlugin-container"
+                jcr:primaryType="nt:unstructured"
+                sling:resourceType="granite/ui/components/coral/foundation/accordion"
+                variant="quiet">
+            <items jcr:primaryType="nt:unstructured">
+                <dynamicFund
+                        jcr:primaryType="nt:unstructured"
+                        jcr:title="Dynamic Funds"
+                        sling:resourceType="granite/ui/components/coral/foundation/container"
+                        active="true">
+                    <items jcr:primaryType="nt:unstructured">
+                        <mainGroup
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                                fieldDescription="Select main group from the dropdown"
+                                fieldLabel="Select Main Group"
+                                name="./mainGroup">
+                            <datasource
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
+                                    dropdownSelector="mainGroupList"/>
+                        </mainGroup>
+                        <products
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                                fieldDescription="Select product from the dropdown"
+                                fieldLabel="Select Product"
+                                name="./product">
+                            <datasource
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
+                                    dropdownSelector="productsList"/>
+                        </products>
+                        <apir
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                fieldDescription="Author the unique APiR Code to get the net performance figures"
+                                fieldLabel="APIR Code"
+                                name="./apir"
+                                required="{Boolean}true"/>
+                        <years
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                                fieldDescription="Select year from the dropdown"
+                                fieldLabel="Select Year"
+                                name="./year">
+                            <datasource
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
+                                    dropdownSelector="yearsList"/>
+                        </years>
+                        <inceptionText
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/textfield"
+                                fieldDescription="To show the date dynamically after text, please enter '#date#' identifier. Eg:inception #date#."
+                                fieldLabel="Enter Inception Text"
+                                name="./inception"/>
+                    </items>
+                </dynamicFund>
+                <general
+                        jcr:primaryType="nt:unstructured"
+                        jcr:title="General"
+                        sling:resourceType="granite/ui/components/coral/foundation/container"
+                        active="true">
+                    <items jcr:primaryType="nt:unstructured">
+                        <layout
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/select"
+                                fieldLabel="Layout"
+                                name="./layout">
+                            <items jcr:primaryType="nt:unstructured">
+                                <vertical
+                                        jcr:primaryType="nt:unstructured"
+                                        text="Vertical"
+                                        value="vertical"/>
+                                <horizontal
+                                        jcr:primaryType="nt:unstructured"
+                                        text="Horizontal"
+                                        value="horizontal"/>
+                            </items>
+                        </layout>
+                        <content
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="cq/gui/components/authoring/dialog/richtext"
+                                fieldLabel="Description"
+                                name="./content"
+                                useFixedInlineToolbar="{Boolean}true">
+                            <rtePlugins
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/rtePlugins"/>
+                            <uiSettings
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceSuperType="/apps/cfs-winged/global/rtepluginConfig/uiSettings"/>
+                        </content>
+                        <horizontalLine
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/foundation/form/checkbox"
+                                fieldDescription="Add a checkbox"
+                                name="./horizontalLine"
+                                text="Horizontal Line"
+                                value="{Boolean}true"/>
+                        <verticalLine
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/foundation/form/checkbox"
+                                fieldDescription="Add a checkbox"
+                                name="./verticalLine"
+                                text="Vertical Line"
+                                value="{Boolean}true"/>
+                    </items>
+                </general>
+                <media
+                        jcr:primaryType="nt:unstructured"
+                        jcr:title="Media"
+                        sling:resourceType="granite/ui/components/coral/foundation/container">
+                    <items jcr:primaryType="nt:unstructured">
+                        <imageUrl
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/pathfield"
+                                fieldDescription="Add a Image from the DAM section for the card"
+                                fieldLabel="Image Path (from DAM)"
+                                name="./imageUrl"
+                                rootPath="/content/dam"/>
+                    </items>
+                </media>
+                <buttons
+                        jcr:primaryType="nt:unstructured"
+                        jcr:title="Buttons"
+                        sling:resourceType="granite/ui/components/coral/foundation/container">
+                    <items jcr:primaryType="nt:unstructured">
+                        <actions
+                                granite:class="cmp-teaser__editor-multifield_actions"
+                                jcr:primaryType="nt:unstructured"
+                                sling:resourceType="granite/ui/components/coral/foundation/form/multifield"
+                                composite="{Boolean}true"
+                                fieldLabel="Add Buttons">
+                            <field
+                                    granite:class="multifield-item-boarder-bottom"
+                                    jcr:primaryType="nt:unstructured"
+                                    sling:resourceType="granite/ui/components/coral/foundation/container"
+                                    name="./actions">
+                                <items
+                                        jcr:primaryType="nt:unstructured"
+                                        sling:resourceSuperType="/apps/cfs-winged/global/buttonDialog/items"/>
+                            </field>
+                        </actions>
+                    </items>
+                </buttons>
+            </items>
+        </accordion>
+    </items>
+</jcr:root>
