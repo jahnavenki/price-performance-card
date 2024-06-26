@@ -1,89 +1,100 @@
-kind: "LogForwarding"
-version: "1"
-metadata:
-  envTypes: ["dev"]
-data:
-  dataDog:
-    default:
-      enabled: true
-      host: "http-intake.logs.datadoghq.eu"
-      token: "${{DATADOG_API_KEY}}"
-Host name : https://app.datadoghq.com/
-API Key : 85c8344a28826920a77badada4d77927
-
-'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-{
-  "smtp.host": "$[env:AEM_PROXY_HOST;default=proxy.tunnel]",
-  "smtp.user": "$[env:SMTP_USER;default=0d007aca-b17c-4e92-85c5-bf0f1ba9df08]",
-  "smtp.password": "$[env:SMTP_PASSWORD;default=........]",
-  "smtp.port": "$[env:SMTP_PORT;default=30587]",
-  "from.address": "$[env:SMTP_FROM_ADDRESS;default=cfswebsite-np@dev.cfs.com.au]",
-  "smtp.ssl": "$[env:SMTP_SSL;default=false]",
-  "smtp.starttls": "$[env:SMTP_START_TLS;default=true]",
-  "smtp.requiretls": "$[env:SMTP_REQUIRETLS;default=false]",
-  "debug.email": "$[env:SMTP_DEBUG_EMAIL;default=true]",
-  "oauth.flow": "$[env:SMTP_OAUTH_FLOW;default=false]"
-}
-
-com.day.cq.mailer.DefaultMailService.cfg.json
-
-
-
-
-{
-  "kind": "LogForwarding",
-  "version": "1",
-  "metadata": {
-    "envTypes": ["dev", "stage", "prod"]
-  },
-  "data": {
-    "dataDog": {
-      "default": {
-        "enabled": true,
-        "host": "http-intake.logs.datadoghq.eu",
-        "token": "85c8344a28826920a77badada4d77927"
-      },
-      "aem": {
-        "enabled": true,
-        "host": "proxy.tunnel",
-        "port": 30443
-      }
+[
+    {
+        "text" : "Super",
+        "value": "SF"
+    },
+    {
+        "text" : "Pension",
+        "value": "RF"
+    },
+    {
+        "text" : "Investments",
+        "value": "IF"
+    },
+     {
+        "text" : "Institutional & master trust",
+        "value": "WF"
     }
-  }
-}
-............................................
-dataDog:
-  default:
-    enabled: true
-    host: "http-intake.logs.datadoghq.eu"
-    token: "$[env:DATADOG_API_KEY]"
-  aem:
-    enabled: true
-    host: "$[env:AEM_PROXY_HOST;default=proxy.tunnel]"
-    port: 30443
-......................
-{
-  "dataDog": {
-    "default": {
-      "enabled": true,
-      "host": "$[env:AEM_PROXY_HOST;default=proxy.tunnel]",
-      "token": "$[env:DATADOG_API_KEY;default=85c8344a28826920a77badada4d77927]",
-      "port": "$[env:DATADOG_PORT;default=30443]"
+]
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[
+    {
+        "text": "FirstChoice Wholesale Personal Super",
+        "value": "11"
+    },
+    {
+        "text": "FirstChoice Employer Super",
+        "value": "65"
+    },
+    {
+        "text": "FirstChoice Wholesale Pension",
+        "value": "51"
+    },
+    {
+        "text": "FirstChoice Wholesale Investments",
+        "value": "91"
+    },
+    {
+        "text": "FirstChoice Investments",
+        "value": "70"
+    },
+    {
+        "text": "Managed Investment Funds",
+        "value": "90"
+    },
+    {
+        "text": "Institutional & master trust",
+        "value": "91,73,120"
     }
-  }
-}
-
-com.adobe.aem.datadog.logForwarding.json
-;;;;;;;;;;;;;;;;;;;;
-1. Create or Update Environment Variables
-Log in to AEM Cloud Manager.
-Navigate to the Program you want to configure.
-Open the Pipelines tab.
-Edit the Pipeline configuration where you want to add the Datadog API key.
-Add an Environment Variable named DATADOG_API_KEY and set its value to 85c8344a28826920a77badada4d77927.
-2. Modify the Configuration File
-Access the AEM Cloud Manager Code Repository where your project is stored.
-
-Navigate to the Configuration File: Typically, this would be under conf or config directories. You might need to create a new file if one does not exist.
-
-Create/Update Log Forwarding Configuration: Assuming you're using the provided YAML configuration, your log-forwarding.yaml file might look like this:
+      
+]
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+[
+    {
+        "text": "1 year",
+        "value": "oneYear"
+    },
+    {
+        "text": "2 year",
+        "value": "twoYears"
+    },
+    {
+        "text": "3 year",
+        "value": "threeYears"
+    },
+    {
+        "text": "4 year",
+        "value": "fourYearsn"
+    },
+    {
+        "text": "5 year",
+        "value": "fiveYears"
+    },
+    {
+        "text": "7 year",
+        "value": "sevenYears"
+    },
+    {
+        "text": "10 year",
+        "value": "tenYears"
+    },
+    {
+        "text": "Since inception",
+        "value": "sinceInception"
+    }
+]
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
+[
+    {
+        "text" : "companyCode",
+        "value": "001"
+    },
+    {
+        "text" : "api",
+        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
+    },
+    {
+        "text" : "fundLinkBaseUrl",
+        "value": "https://www.colonialfirststate.com.au"
+    }
+]
