@@ -107,3 +107,5 @@
 ]
 
 /apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup
+
+Node[NodeDelegate{tree=/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup: { jcr:primaryType = nt:unstructured, name = ./mainGroup, fieldLabel = Select Main Group, sling:resourceType = granite/ui/components/coral/foundation/form/select, fieldDescription = Select main group from the dropdown, datasource = { ... }}}]
