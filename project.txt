@@ -49,7 +49,7 @@
         "mainGroup": "IF"
     },
     {
-        "text": "Institutional & Master Mrust",
+        "text": "Institutional & Master Trust",
         "value": "91,73,120",
         "mainGroup": "WF"
     }
