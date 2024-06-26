@@ -26,7 +26,7 @@
     {
         "text": "FirstChoice Employer Super",
         "value": "65",
-        "mainGroup": "SF"
+        "mainGroup": "RF"
     },
     {
         "text": "FirstChoice Wholesale Pension",
@@ -54,6 +54,7 @@
         "mainGroup": "WF"
     }
 ]
+
 
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 [
