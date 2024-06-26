@@ -105,3 +105,5 @@
         "value": "https://www.colonialfirststate.com.au"
     }
 ]
+
+/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup
