@@ -20,34 +20,41 @@
 [
     {
         "text": "FirstChoice Wholesale Personal Super",
-        "value": "11"
+        "value": "11",
+        "mainGroup": "SF"
     },
     {
         "text": "FirstChoice Employer Super",
-        "value": "65"
+        "value": "65",
+        "mainGroup": "SF"
     },
     {
         "text": "FirstChoice Wholesale Pension",
-        "value": "51"
+        "value": "51",
+        "mainGroup": "RF"
     },
     {
         "text": "FirstChoice Wholesale Investments",
-        "value": "91"
+        "value": "91",
+        "mainGroup": "IF"
     },
     {
         "text": "FirstChoice Investments",
-        "value": "70"
+        "value": "70",
+        "mainGroup": "IF"
     },
     {
         "text": "Managed Investment Funds",
-        "value": "90"
+        "value": "90",
+        "mainGroup": "IF"
     },
     {
-        "text": "Institutional & master trust",
-        "value": "91,73,120"
+        "text": "Institutional & Master Mrust",
+        "value": "91,73,120",
+        "mainGroup": "WF"
     }
-      
 ]
+
 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 [
     {
