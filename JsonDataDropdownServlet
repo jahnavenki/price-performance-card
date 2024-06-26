@@ -1,5 +1,6 @@
 package au.com.cfs.winged.servlets;
 
+import au.com.cfs.winged.core.models.DynamicFundCardModel;
 import au.com.cfs.winged.core.services.DynamicFundService;
 import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
@@ -20,6 +21,7 @@ import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -58,10 +60,13 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 	@Override
 	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
 		try {
-
+			DynamicFundCardModel filterParameters = request.adaptTo(DynamicFundCardModel.class);
+			String selectedMainGroup = filterParameters != null ? filterParameters.getMainGroup() :null;
+			//String selectedProducts = filterParameters != null ? filterParameters.getProduct() :null;
 			ResourceResolver resourceResolver = request.getResourceResolver();
 			Resource currentResource = request.getResource();
 			String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
+
 			Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
 			Asset asset = DamUtil.resolveToAsset(jsonResource);
 			Rendition originalAsset = Objects.requireNonNull(asset).getOriginal();
@@ -75,24 +80,24 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 			JSONArray jsonArray = new JSONArray(jsonContent.toString());
 
 			Map<String, String> data = new TreeMap<>();
-			 // Filter logic based on selected main group
-				if ("mainGroups".equals(dropdownSelector)) {
-					for (int i = 0; i < jsonArray.length(); i++) {
-						JSONObject mainGroup = jsonArray.getJSONObject(i);
-						data.put(mainGroup.getString("text"), mainGroup.getString("value"));
-					}
-				} else if ("products".equals(dropdownSelector) && selectedMainGroup != null) {
-					for (int i = 0; i < jsonArray.length(); i++) {
-						JSONObject product = jsonArray.getJSONObject(i);
-						if (selectedMainGroup.equals(product.getString("mainGroup"))) {
-							data.put(product.getString("text"), product.getString("value"));
-						}
-					}
-				} else {
-					for (int i = 0; i < jsonArray.length(); i++) {
-						data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
+			// Filter logic based on selected main group
+			if (MAIN_GROUP_LIST.equals(dropdownSelector)) {
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject mainGroup = jsonArray.getJSONObject(i);
+					data.put(mainGroup.getString("text"), mainGroup.getString("value"));
+				}
+			} else if (PRODUCTS_LIST.equals(dropdownSelector) && selectedMainGroup != null) {
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject product = jsonArray.getJSONObject(i);
+					if (selectedMainGroup.equals(product.getString("mainGroup"))) {
+						data.put(product.getString("text"), product.getString("value"));
 					}
 				}
+			} else {
+				for (int i = 0; i < jsonArray.length(); i++) {
+					data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
+				}
+			}
 
 			@SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
 				String dropValue = (String) o;
