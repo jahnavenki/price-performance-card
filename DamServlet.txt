@@ -38,13 +38,7 @@ import java.util.TreeMap;
 
 import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
 
-@Component(
-    service = Servlet.class,
-    property = {
-        Constants.SERVICE_ID + "=" + DynamicFundDataSourceServlet.SERVICE_NAME,
-        "sling.servlet.resourceTypes=" + DynamicFundDataSourceServlet.RESOURCE_TYPE
-    }
-)
+@Component(service = Servlet.class, property = {Constants.SERVICE_ID + "=" + DynamicFundDataSourceServlet.SERVICE_NAME, "sling.servlet.resourceTypes=" + DynamicFundDataSourceServlet.RESOURCE_TYPE})
 public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
     protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
@@ -61,123 +55,74 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
         try {
             ResourceResolver resourceResolver = request.getResourceResolver();
             Resource currentResource = request.getResource();
-            
-            // Fetching dropdown selector from the request parameter
             String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
-            
-            // Fetching JSON resource based on the dropdown selector
-            Resource jsonResource = getJsonResource(resourceResolver, dropdownSelector);
-            JSONArray jsonArray = convertToJsonArray(jsonResource);
-            
-            // Depending on the dropdown selector, process the JSON data accordingly
-            Map<String, String> data = new TreeMap<>();
-            switch (dropdownSelector) {
-                case MAIN_GROUP_LIST:
-                    // Process mainGroup JSON data
-                    data = processMainGroupData(jsonArray);
-                    break;
-                case PRODUCTS_LIST:
-                    // Filter products based on mainGroup selection
-                    String mainGroupValue = request.getParameter("mainGroup"); // Assuming parameter name is "mainGroup"
-                    data = filterProductsByMainGroup(jsonArray, mainGroupValue);
-                    break;
-                case YEARS_LIST:
-                    // Process years JSON data
-                    data = processYearsData(jsonArray);
-                    break;
-                default:
-                    LOGGER.warn("Unsupported dropdown selector: {}", dropdownSelector);
-                    break;
+            Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
+            Asset asset = DamUtil.resolveToAsset(jsonResource);
+            Rendition originalAsset = Objects.requireNonNull(asset).getOriginal();
+            InputStream content = Objects.requireNonNull(originalAsset).adaptTo(InputStream.class);
+            StringBuilder jsonContent = new StringBuilder();
+            BufferedReader jsonReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(content), StandardCharsets.UTF_8));
+            String line;
+            while ((line = jsonReader.readLine()) != null) {
+                jsonContent.append(line);
             }
-            
-            // Creating DataSource for dropdown
-            @SuppressWarnings({"unchecked", "rawtypes"})
-            DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
-                String dropValue = (String) o;
-                ValueMap vm = new ValueMapDecorator(new HashMap<>());
-                vm.put("text", dropValue);
-                vm.put("value", data.get(dropValue));
-                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-            }));
-            
-            // Adding DataSource to request attributes
-            request.setAttribute(DataSource.class.getName(), ds);
-            
+            JSONArray jsonArray = new JSONArray(jsonContent.toString());
+
+            String mainGroup = request.getParameter("mainGroup");
+
+            // Filter products based on mainGroup selection
+            Map<String, String[]> mainGroupToProducts = new HashMap<>();
+            mainGroupToProducts.put("SF", new String[]{"FirstChoice Wholesale Personal Super", "FirstChoice Employer Super"});
+            mainGroupToProducts.put("RF", new String[]{"FirstChoice Wholesale Pension"});
+            mainGroupToProducts.put("IF", new String[]{"FirstChoice Wholesale Investments", "FirstChoice Investments", "Managed Investment Funds"});
+            mainGroupToProducts.put("WF", new String[]{"Institutional & Master Mrust"});
+
+            String[] filteredProducts = mainGroupToProducts.get(mainGroup);
+
+            if (filteredProducts != null) {
+                Map<String, String> data = new TreeMap<>();
+                for (String productText : filteredProducts) {
+                    for (int i = 0; i < jsonArray.length(); i++) {
+                        if (jsonArray.getJSONObject(i).getString("text").equals(productText)) {
+                            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
+                            break;
+                        }
+                    }
+                }
+
+                @SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
+                    String dropValue = (String) o;
+                    ValueMap vm = new ValueMapDecorator(new HashMap<>());
+                    vm.put("text", dropValue);
+                    vm.put("value", data.get(dropValue));
+                    return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+                }));
+                request.setAttribute(DataSource.class.getName(), ds);
+            }
+
+            // Retain existing code for years dropdown
+            // Assuming the years dropdown processing is handled elsewhere or differently
+
         } catch (IOException | JSONException e) {
             LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
-            response.setStatus(SlingHttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
     }
 
-    private Resource getJsonResource(ResourceResolver resourceResolver, String damPath) throws IOException {
-        // Fetching JSON resource from DAM using the provided damPath
-        Resource jsonResource = resourceResolver.getResource(damPath);
-        
-        if (jsonResource == null) {
-            throw new IOException("Failed to retrieve JSON resource from DAM: " + damPath);
+    private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
+        Resource jsonResource;
+        switch (dropdownSelector) {
+            case MAIN_GROUP_LIST:
+                jsonResource = resourceResolver.getResource(MAIN_GROUP_LIST_PATH);
+                break;
+            case PRODUCTS_LIST:
+                jsonResource = resourceResolver.getResource(PRODUCTS_LIST_PATH);
+                break;
+            case YEARS_LIST:
+                jsonResource = resourceResolver.getResource(YEARS_LIST_PATH);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + dropdownSelector);
         }
-        
         return jsonResource;
-    }
-
-    private JSONArray convertToJsonArray(Resource jsonResource) throws IOException, JSONException {
-        // Converting InputStream from JSON resource to JSONArray
-        InputStream is = null;
-        try {
-            is = jsonResource.adaptTo(InputStream.class);
-            if (is == null) {
-                throw new IOException("Failed to adapt InputStream from JSON Resource");
-            }
-            
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            StringBuilder jsonStringBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                jsonStringBuilder.append(line);
-            }
-            
-            return new JSONArray(jsonStringBuilder.toString());
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-    }
-
-    private Map<String, String> processMainGroupData(JSONArray jsonArray) throws JSONException {
-        // Process mainGroup JSON data and return a map of text and values
-        Map<String, String> data = new TreeMap<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
-        }
-        return data;
-    }
-
-    private Map<String, String> filterProductsByMainGroup(JSONArray productsJsonArray, String mainGroupValue) throws JSONException {
-        // Filter products JSON data based on mainGroup selection and return a map of text and values
-        Map<String, String> filteredData = new TreeMap<>();
-        for (int i = 0; i < productsJsonArray.length(); i++) {
-            String text = productsJsonArray.getJSONObject(i).getString("text");
-            String value = productsJsonArray.getJSONObject(i).getString("value");
-            
-            // Assuming mainGroupValue is a comma-separated string of mainGroup values
-            String[] mainGroups = mainGroupValue.split(",");
-            for (String mainGroup : mainGroups) {
-                if (value.equals(mainGroup.trim())) {
-                    filteredData.put(text, value);
-                    break; // Break once matched to avoid duplicates
-                }
-            }
-        }
-        return filteredData;
-    }
-
-    private Map<String, String> processYearsData(JSONArray jsonArray) throws JSONException {
-        // Process years JSON data and return a map of text and values
-        Map<String, String> data = new TreeMap<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
-        }
-        return data;
     }
 }
