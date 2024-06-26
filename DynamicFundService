@@ -1,79 +1,126 @@
-package au.com.cfs.winged.core.services;
+package au.com.cfs.winged.servlets;
 
-import au.com.cfs.winged.core.common.constants.ApplicationConstants;
+import au.com.cfs.winged.core.services.DynamicFundService;
+import com.adobe.granite.ui.components.ds.DataSource;
+import com.adobe.granite.ui.components.ds.SimpleDataSource;
+import com.adobe.granite.ui.components.ds.ValueMapResource;
 import com.day.cq.dam.api.Asset;
+import com.day.cq.dam.api.Rendition;
+import com.day.cq.dam.commons.util.DamUtil;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.jackrabbit.JcrConstants;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
 import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
 import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.Servlet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
-@Component(service = DynamicFundService.class)
-public class DynamicFundService {
+import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
 
-	private static final Logger LOG = LoggerFactory.getLogger(DynamicFundService.class);
+@Component(service = Servlet.class, property = {Constants.SERVICE_ID + "=" + DynamicFundDataSourceServlet.SERVICE_NAME, "sling.servlet.resourceTypes=" + DynamicFundDataSourceServlet.RESOURCE_TYPE})
+public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
-	private String companyCode;
-	private String api;
-	private String fundLinkBaseUrl;
+    protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
+    protected static final String RESOURCE_TYPE = "/apps/cfs-winged/dynamicFund/dropdowns";
+    private static final long serialVersionUID = 4235730140092283425L;
+    private static final String TAG = DynamicFundDataSourceServlet.class.getSimpleName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicFundDataSourceServlet.class);
 
-	public String getCompanyCode() {
-		return companyCode;
-	}
+    @Reference
+    private DynamicFundService dynamicFundService;
 
-	public String getApi() {
-		return api;
-	}
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        try {
+            ResourceResolver resourceResolver = request.getResourceResolver();
+            Resource currentResource = request.getResource();
+            
+            // Existing code to get dropdownSelector
+            String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
+            
+            // Load mainGroup, years, and products JSON data
+            JSONArray mainGroupArray = loadJsonArray(resourceResolver.getResource(MAIN_GROUP_LIST_PATH));
+            JSONArray yearsArray = loadJsonArray(resourceResolver.getResource(YEARS_LIST_PATH));
+            JSONArray productsArray = loadJsonArray(resourceResolver.getResource(PRODUCTS_LIST_PATH));
+            
+            // Filter products based on mainGroup
+            JSONArray filteredProducts = filterProductsByMainGroup(mainGroupArray, productsArray, dropdownSelector);
+            
+            // Construct data map for dropdown
+            Map<String, String> data = new TreeMap<>();
+            for (int i = 0; i < filteredProducts.length(); i++) {
+                data.put(filteredProducts.getJSONObject(i).getString("text"), filteredProducts.getJSONObject(i).getString("value"));
+            }
+            
+            // Create DataSource and set it as request attribute
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
+                String dropValue = (String) o;
+                ValueMap vm = new ValueMapDecorator(new HashMap<>());
+                vm.put("text", dropValue);
+                vm.put("value", data.get(dropValue));
+                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+            }));
+            request.setAttribute(DataSource.class.getName(), ds);
+        } catch (IOException | JSONException e) {
+            LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
+        }
+    }
 
-	public String getFundLinkBaseUrl() {
-		return fundLinkBaseUrl;
-	}
+    private JSONArray loadJsonArray(Resource jsonResource) throws IOException, JSONException {
+        InputStream content = Objects.requireNonNull(jsonResource.adaptTo(InputStream.class));
+        StringBuilder jsonContent = new StringBuilder();
+        BufferedReader jsonReader = new BufferedReader(new InputStreamReader(content, StandardCharsets.UTF_8));
+        String line;
+        while ((line = jsonReader.readLine()) != null) {
+            jsonContent.append(line);
+        }
+        return new JSONArray(jsonContent.toString());
+    }
 
-	public void fetchAndSetValues(ResourceResolver resourceResolver) throws IOException, JSONException {
+    private JSONArray filterProductsByMainGroup(JSONArray mainGroupArray, JSONArray productsArray, String dropdownSelector) throws JSONException {
+        String mainGroupValue = null;
+        // Find the mainGroup value based on dropdownSelector
+        for (int i = 0; i < mainGroupArray.length(); i++) {
+            if (mainGroupArray.getJSONObject(i).getString("text").equals(dropdownSelector)) {
+                mainGroupValue = mainGroupArray.getJSONObject(i).getString("value");
+                break;
+            }
+        }
 
-		Resource resource = resourceResolver.getResource(ApplicationConstants.END_POINT_LIST_PATH);
-		Asset asset = resource.adaptTo(Asset.class);
-		Resource original;
-		original = asset.getOriginal();
-		InputStream jsonContent = original.adaptTo(InputStream.class);
-		StringBuilder stringBuilder = new StringBuilder();
-		String eachLine;
-		BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(jsonContent, StandardCharsets.UTF_8));
-
-		while((eachLine = bufferedReader.readLine()) != null) {
-			stringBuilder.append(eachLine);
-		}
-		JSONArray jsonArray = new JSONArray(stringBuilder.toString());
-		Map<String, String> data = new TreeMap<>();
-		for(int i = 0; i < jsonArray.length(); i++) {
-			data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
-		}
-
-		setCompanyCode(data.get("companyCode"));
-		setApi(data.get("api"));
-		setFundLinkBaseUrl(data.get("fundLinkBaseUrl"));
-	}
-
-	private void setCompanyCode(String companyCode) {
-		this.companyCode = companyCode;
-	}
-
-	private void setApi(String api) {
-		this.api = api;
-	}
-
-	private void setFundLinkBaseUrl(String fundLinkBaseUrl) {
-		this.fundLinkBaseUrl = fundLinkBaseUrl;
-	}
+        // Filter products based on mainGroupValue
+        JSONArray filteredProducts = new JSONArray();
+        for (int i = 0; i < productsArray.length(); i++) {
+            String[] productValues = productsArray.getJSONObject(i).getString("value").split(",");
+            for (String value : productValues) {
+                if (value.trim().equals(mainGroupValue)) {
+                    filteredProducts.put(productsArray.getJSONObject(i));
+                    break;
+                }
+            }
+        }
+        return filteredProducts;
+    }
 }
