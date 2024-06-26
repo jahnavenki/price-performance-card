@@ -1,7 +1,32 @@
+package au.com.cfs.winged.servlets;
+
+import com.adobe.granite.ui.components.ds.DataSource;
+import com.adobe.granite.ui.components.ds.SimpleDataSource;
+import com.adobe.granite.ui.components.ds.ValueMapResource;
+import com.day.cq.dam.api.Asset;
+import com.day.cq.dam.api.Rendition;
+import com.day.cq.dam.commons.util.DamUtil;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.jackrabbit.JcrConstants;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import javax.servlet.Servlet;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,105 +37,111 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-// Import statements and class definition...
+import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
 
-private static final String MAIN_GROUP_JSON_PATH = "/path/to/mainGroup.json";
-private static final String PRODUCTS_JSON_PATH = "/path/to/products.json";
-private static final String YEARS_JSON_PATH = "/path/to/years.json";
-
-@Override
-protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-    try {
-        ResourceResolver resourceResolver = request.getResourceResolver();
-
-        // Load mainGroup JSON
-        Resource mainGroupResource = resourceResolver.getResource(MAIN_GROUP_JSON_PATH);
-        JSONArray mainGroupJson = new JSONArray(getJsonContent(mainGroupResource));
-
-        // Load products JSON
-        Resource productsResource = resourceResolver.getResource(PRODUCTS_JSON_PATH);
-        JSONArray productsJson = new JSONArray(getJsonContent(productsResource));
-
-        // Load years JSON
-        Resource yearsResource = resourceResolver.getResource(YEARS_JSON_PATH);
-        JSONArray yearsJson = new JSONArray(getJsonContent(yearsResource));
-
-        // Get dropdown selector (assuming similar to your existing logic)
-        String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
-
-        // Get selected mainGroup value from mainGroup JSON
-        String selectedMainGroupValue = getSelectedMainGroupValue(mainGroupJson, dropdownSelector);
-
-        // Filter products based on selected mainGroup
-        JSONArray filteredProducts = filterProductsByMainGroup(productsJson, selectedMainGroupValue);
-
-        // Construct data for products dropdown
-        Map<String, String> productData = new TreeMap<>();
-        for (int i = 0; i < filteredProducts.length(); i++) {
-            JSONObject product = filteredProducts.getJSONObject(i);
-            productData.put(product.getString("text"), product.getString("value"));
-        }
-
-        // Construct data for years dropdown
-        Map<String, String> yearData = new TreeMap<>();
-        for (int i = 0; i < yearsJson.length(); i++) {
-            JSONObject year = yearsJson.getJSONObject(i);
-            yearData.put(year.getString("text"), year.getString("value"));
-        }
-
-        // Create DataSource for products
-        @SuppressWarnings({"unchecked", "rawtypes"}) DataSource productDataSource = new SimpleDataSource(new TransformIterator<>(productData.keySet().iterator(), (Transformer) o -> {
-            String dropValue = (String) o;
-            ValueMap vm = new ValueMapDecorator(new HashMap<>());
-            vm.put("text", dropValue);
-            vm.put("value", productData.get(dropValue));
-            return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-        }));
-        request.setAttribute("productsDataSource", productDataSource);
-
-        // Create DataSource for years
-        @SuppressWarnings({"unchecked", "rawtypes"}) DataSource yearDataSource = new SimpleDataSource(new TransformIterator<>(yearData.keySet().iterator(), (Transformer) o -> {
-            String dropValue = (String) o;
-            ValueMap vm = new ValueMapDecorator(new HashMap<>());
-            vm.put("text", dropValue);
-            vm.put("value", yearData.get(dropValue));
-            return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-        }));
-        request.setAttribute("yearsDataSource", yearDataSource);
-
-    } catch (IOException | JSONException e) {
-        LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
+@Component(
+    service = Servlet.class,
+    property = {
+        Constants.SERVICE_ID + "=" + DynamicFundDataSourceServlet.SERVICE_NAME,
+        "sling.servlet.resourceTypes=" + DynamicFundDataSourceServlet.RESOURCE_TYPE
     }
-}
+)
+public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
-private String getJsonContent(Resource resource) throws IOException {
-    InputStream inputStream = resource.adaptTo(InputStream.class);
-    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
-    StringBuilder stringBuilder = new StringBuilder();
-    String line;
-    while ((line = reader.readLine()) != null) {
-        stringBuilder.append(line);
-    }
-    return stringBuilder.toString();
-}
+    protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
+    protected static final String RESOURCE_TYPE = "/apps/cfs-winged/dynamicFund/dropdowns";
+    private static final long serialVersionUID = 4235730140092283425L;
+    private static final String TAG = DynamicFundDataSourceServlet.class.getSimpleName();
+    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicFundDataSourceServlet.class);
 
-private String getSelectedMainGroupValue(JSONArray mainGroupJson, String dropdownSelector) throws JSONException {
-    for (int i = 0; i < mainGroupJson.length(); i++) {
-        JSONObject jsonObject = mainGroupJson.getJSONObject(i);
-        if (jsonObject.getString("text").equals(dropdownSelector)) {
-            return jsonObject.getString("value");
+    @Reference
+    private DynamicFundService dynamicFundService;
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+        try {
+            ResourceResolver resourceResolver = request.getResourceResolver();
+            Resource currentResource = request.getResource();
+            String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
+            Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
+            JSONArray jsonArray = new JSONArray(getJsonContent(jsonResource));
+
+            // Load mainGroup.json data
+            Resource mainGroupResource = getJsonResource(resourceResolver, MAIN_GROUP_LIST);
+            JSONArray mainGroupArray = new JSONArray(getJsonContent(mainGroupResource));
+
+            // Filter products based on main group selection
+            String mainGroupValue = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get("mainGroup", String.class);
+            JSONArray filteredProducts = filterProductsByMainGroup(jsonArray, mainGroupArray, mainGroupValue);
+
+            // Convert filteredProducts to map for DataSource
+            Map<String, String> data = new TreeMap<>();
+            for (int i = 0; i < filteredProducts.length(); i++) {
+                data.put(filteredProducts.getJSONObject(i).getString("text"), filteredProducts.getJSONObject(i).getString("value"));
+            }
+
+            // Create DataSource
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
+                String dropValue = (String) o;
+                ValueMap vm = new ValueMapDecorator(new HashMap<>());
+                vm.put("text", dropValue);
+                vm.put("value", data.get(dropValue));
+                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+            }));
+            request.setAttribute(DataSource.class.getName(), ds);
+        } catch (IOException | JSONException e) {
+            LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
         }
     }
-    return null; // Handle appropriately if dropdownSelector doesn't match any mainGroup
-}
 
-private JSONArray filterProductsByMainGroup(JSONArray productsJson, String selectedMainGroupValue) throws JSONException {
-    JSONArray filteredProducts = new JSONArray();
-    for (int i = 0; i < productsJson.length(); i++) {
-        JSONObject product = productsJson.getJSONObject(i);
-        if (product.getString("mainGroup").equals(selectedMainGroupValue)) {
-            filteredProducts.put(product);
+    private String getJsonContent(Resource jsonResource) throws IOException {
+        // Read JSON content from jsonResource
+        InputStream content = jsonResource.adaptTo(InputStream.class);
+        StringBuilder jsonContent = new StringBuilder();
+        BufferedReader jsonReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(content), StandardCharsets.UTF_8));
+        String line;
+        while ((line = jsonReader.readLine()) != null) {
+            jsonContent.append(line);
         }
+        return jsonContent.toString();
     }
-    return filteredProducts;
+
+    private JSONArray filterProductsByMainGroup(JSONArray products, JSONArray mainGroups, String selectedMainGroup) throws JSONException {
+        JSONArray filteredProducts = new JSONArray();
+        for (int i = 0; i < products.length(); i++) {
+            JSONObject product = products.getJSONObject(i);
+            for (int j = 0; j < mainGroups.length(); j++) {
+                JSONObject mainGroup = mainGroups.getJSONObject(j);
+                if (product.optString("mainGroup").equals(mainGroup.optString("value")) && mainGroup.optString("text").equals(selectedMainGroup)) {
+                    filteredProducts.put(product);
+                    break;
+                }
+            }
+        }
+        return filteredProducts;
+    }
+
+    private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
+        Resource jsonResource;
+        switch (dropdownSelector) {
+            case MAIN_GROUP_LIST:
+                jsonResource = getMainGroupResource(resourceResolver);
+                break;
+            case PRODUCTS_LIST:
+                jsonResource = resourceResolver.getResource(PRODUCTS_LIST_PATH);
+                break;
+            case YEARS_LIST:
+                jsonResource = resourceResolver.getResource(YEARS_LIST_PATH);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + dropdownSelector);
+        }
+        return jsonResource;
+    }
+
+    private Resource getMainGroupResource(ResourceResolver resourceResolver) {
+        // Replace with your actual path to the mainGroup.json file
+        return resourceResolver.getResource(MAIN_GROUP_LIST_PATH);
+    }
 }
