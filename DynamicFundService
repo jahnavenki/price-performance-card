@@ -4,9 +4,6 @@ import au.com.cfs.winged.core.services.DynamicFundService;
 import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
 import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.dam.api.Asset;
-import com.day.cq.dam.api.Rendition;
-import com.day.cq.dam.commons.util.DamUtil;
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.jackrabbit.JcrConstants;
@@ -84,6 +81,24 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
                 return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
             }));
             request.setAttribute(DataSource.class.getName(), ds);
+            
+            // Prepare years dropdown data
+            Map<String, String> yearsData = new TreeMap<>();
+            for (int i = 0; i < yearsArray.length(); i++) {
+                yearsData.put(yearsArray.getJSONObject(i).getString("text"), yearsArray.getJSONObject(i).getString("value"));
+            }
+            
+            // Create DataSource for years and set it as request attribute
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            DataSource yearsDS = new SimpleDataSource(new TransformIterator<>(yearsData.keySet().iterator(), (Transformer) o -> {
+                String yearText = (String) o;
+                ValueMap vm = new ValueMapDecorator(new HashMap<>());
+                vm.put("text", yearText);
+                vm.put("value", yearsData.get(yearText));
+                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+            }));
+            request.setAttribute("yearsDataSource", yearsDS);
+            
         } catch (IOException | JSONException e) {
             LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
         }
@@ -113,7 +128,7 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
         // Filter products based on mainGroupValue
         JSONArray filteredProducts = new JSONArray();
         for (int i = 0; i < productsArray.length(); i++) {
-            String[] productValues = productsArray.getJSONObject(i).getString("value").split(",");
+            String[] productValues = productsArray.getJSONObject(i).getString("mainGroup").split(",");
             for (String value : productValues) {
                 if (value.trim().equals(mainGroupValue)) {
                     filteredProducts.put(productsArray.getJSONObject(i));
