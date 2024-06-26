@@ -19,6 +19,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+
+import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
 
 @Component(
     service = Servlet.class,
@@ -89,12 +92,12 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
     private JSONArray getJsonArray(ResourceResolver resourceResolver, String selector) throws IOException, JSONException {
         // Adjust paths or logic as needed based on selector
         switch (selector) {
-            case "mainGroupList":
-                return getJsonArrayFromPath(resourceResolver, "/content/cfs-winged/mainGroup.json");
-            case "productsList":
-                return getJsonArrayFromPath(resourceResolver, "/content/cfs-winged/products.json");
-            case "yearsList":
-                return getJsonArrayFromPath(resourceResolver, "/content/cfs-winged/years.json");
+            case MAIN_GROUP_LIST:
+                return getJsonArrayFromPath(resourceResolver, MAIN_GROUP_LIST_PATH);
+            case PRODUCTS_LIST:
+                return getJsonArrayFromPath(resourceResolver, PRODUCTS_LIST_PATH);
+            case YEARS_LIST:
+                return getJsonArrayFromPath(resourceResolver, YEARS_LIST_PATH);
             default:
                 throw new IllegalArgumentException("Invalid selector: " + selector);
         }
@@ -102,18 +105,17 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
     private JSONArray getJsonArrayFromPath(ResourceResolver resourceResolver, String path) throws IOException, JSONException {
         Resource resource = resourceResolver.getResource(path);
-        if (resource != null) {
-            InputStream is = resource.adaptTo(InputStream.class);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
-            StringBuilder stringBuilder = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            return new JSONArray(stringBuilder.toString());
-        } else {
+        if (resource == null) {
             throw new IOException("Resource not found: " + path);
         }
+        InputStream is = resource.adaptTo(InputStream.class);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        StringBuilder stringBuilder = new StringBuilder();
+        String line;
+        while ((line = reader.readLine()) != null) {
+            stringBuilder.append(line);
+        }
+        return new JSONArray(stringBuilder.toString());
     }
 
     private JSONArray filterProductsByMainGroup(JSONArray products, String selectedMainGroup) throws JSONException {
