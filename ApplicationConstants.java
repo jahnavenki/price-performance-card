@@ -1,152 +1,374 @@
-package au.com.cfs.winged.core.common.constants;
+/**
+ * This class represents a model for the form search component.
+ * It is responsible for retrieving and organizing data related to the form search functionality.
+ */
+package au.com.cfs.winged.core.models;
 
-public final class ApplicationConstants {
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 
-  private ApplicationConstants() {
-    throw new UnsupportedOperationException("This is a application constant class and cannot be instantiated");
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.sling.api.resource.*;
+import org.apache.commons.lang.StringUtils;
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.models.annotations.DefaultInjectionStrategy;
+import org.apache.sling.models.annotations.Model;
+import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
+
+import com.day.cq.tagging.Tag;
+import com.day.cq.tagging.TagManager;
+
+import au.com.cfs.winged.core.models.pojo.FormSearchTag;
+import au.com.cfs.winged.core.models.pojo.FormSearchTaxonomy;
+import au.com.cfs.winged.core.util.ObjectUtils;
+import au.com.cfs.winged.helpers.LinkUtil;
+import au.com.cfs.winged.core.common.constants.ApplicationConstants;
+import au.com.cfs.winged.core.models.pojo.FormSearchFileRepeater;
+import au.com.cfs.winged.core.models.pojo.FormSearchItem;
+
+
+@Model(
+  adaptables = SlingHttpServletRequest.class,
+  adapters = FormSearchModel.class,
+  defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL
+)
+public class FormSearchModel {
+
+  private String uuid;
+  
+  /**
+   * The heading of the form search component.
+   */
+  @ValueMapValue
+  private String heading;
+
+  /**
+   * The path to the form fragment resource.
+   */
+  @ValueMapValue
+  private String formFragmentPath;
+
+  /**
+   * The number of items to display per page in the form search results.
+   */
+  @ValueMapValue
+  private String itemsPerPage;
+
+  /**
+   * The resource resolver used for retrieving resources and resolving tags.
+   */
+  @Inject
+  private ResourceResolver resourceResolver;
+
+  /**
+   * The list of category filters for the form search.
+   */
+  private ArrayList<FormSearchTag> categoryFilters;
+
+  /**
+   * The list of product type filters for the form search.
+   */
+  private ArrayList<FormSearchTag> productTypeFilters;
+
+  /**
+   * The list of filters for the form search.
+   */
+  private ArrayList<FormSearchTaxonomy> filters;
+
+  /**
+   * The list of form items for the form search.
+   */
+  private ArrayList<FormSearchItem> formItems;
+
+  /**
+   * Initializes the model by resolving the form content fragment.
+   * This method is called after the model is constructed.
+   */
+  @PostConstruct
+  public void initModel() {
+    this.setUuid();
+    this.resolveFormContentFragment();
+    this.setFilters();
   }
 
-  // Dialog Box constants
-  public static final String TITLE = "title";
-  public static final String HIDE_BUTTON = "hideButton";
-  public static final String MOBILE_TITLE = "mobileTitle";
-  public static final String OVERVIEW = "Overview";
-  public static final String JCR_TITLE = "jcr:title";
-  public static final String JCR_DESCRIPTION = "jcr:description";
-  public static final String CQ_TAGS = "cq:tags";
-  public static final String NAME = "name";
-  public static final String FEATURED_IMAGE = "featuredImage";
-  public static final String DESCRIPTION = "description";
-  public static final String HREF = "href";
-  public static final String LINK = "link";
-  public static final String URL = "url";
-  public static final String ICON = "icon";
-  public static final String LABEL = "label";
-  public static final String SHORT_DESCRIPTION = "shortDescription";
-  public static final String CARD_TAG = "cardTag";
-  public static final String TARGET = "target";
-  public static final String TYPE = "type";
-  public static final String THEME = "theme";
-  public static final String LINK_LABEL = "linkLabel";
-  public static final String IMAGE_URL = "imageUrl";
-  public static final String CTAS = "ctas";
-  public static final String MEDIA_TYPE = "mediaType";
-  public static final String MOBILE_IMAGE_URL = "mobileImageUrl";
-  public static final String TEXT_POSITION = "textPosition";
-  public static final String HEADING = "heading";
-  public static final String SUPER_HEADING = "superHeading";
-  public static final String HEADINGS = "headings";
-  public static final String CONTENT = "content";
-  public static final String DATE = "date";
-  public static final String VIDEO_URL = "videoUrl";
-  public static final String ITEMS = "items";
-  public static final String SECONDARY_ITEMS = "secondaryItems";
-  public static final String MAIN_TITLE = "mainTitle";
-  public static final String BUTTON_LABEL = "buttonLabel";
-  public static final String ICON_URL = "iconUrl";
-  public static final String LAYOUT = "layout";
-  public static final String HEADING_LINK = "headingLink";
-  public static final String NUMBER = "number";
-  public static final String CARDS = "cards";
-  public static final String CARD_SIZE = "cardSize";
-  public static final String ROWS = "rows";
-  public static final String ROW_DATA = "rowData";
-  public static final String DATA = "data";
-  public static final String ACTIONS = "actions";
-  public static final String MANUAL_CARDS = "manualCards";
-  public static final String STEPS = "steps";
-  public static final String COLUMN_WIDTH = "columnWidth";
-  public static final String LINK_TYPE = "linkType";
-  public static final String LINK_URL = "linkUrl";
-  public static final String TRACKING_NAME = "trackingName";
-  public static final String ROLE = "role";
-  public static final String SOCIAL_ITEMS = "socialItems";
-  public static final String ACTIONS_TEAM = "actionsTeam";
-  public static final String ACTIONS_LEADERSHIP = "actionsLeadership";
-  public static final String ICON_SIZE = "iconSize";
-  public static final String HIDE_ON_MOBILE = "hideOnMobile";
+  /**
+   * Converts an array of serialized form search file repeaters into a list of FormSearchFileRepeater objects.
+   *
+   * @param serialisedList The array of serialized form search file repeaters.
+   * @return The list of FormSearchFileRepeater objects.
+   */
+  private ArrayList<FormSearchFileRepeater> formatSerialisedDataToFileRepeaterList(String[] serialisedList) {
+    ArrayList<FormSearchFileRepeater> formSearchFileRepeaterList = new ArrayList<>();
+
+    if (serialisedList != null && serialisedList.length > 0) {
+      for (String serialisedItem : serialisedList) {
+        FormSearchFileRepeater formSearchFileRepeater = ObjectUtils.parseJson(
+            serialisedItem,
+            FormSearchFileRepeater.class
+        );
+
+        if (formSearchFileRepeater != null && !formSearchFileRepeater.getFormName().isEmpty() && !formSearchFileRepeater.getFormLink().isEmpty()) {
+          formSearchFileRepeater.setFormLink(
+            LinkUtil.getMappedURL(
+              formSearchFileRepeater.getFormLink(),
+              resourceResolver
+            )
+          );
   
-  public static final String CONTACTINFO_ITEMS = "contactInfoItems";
-  public static final String LINK_ITEMS = "linkItems";
-  public static final String METADATA = "metadata";
-  public static final String LOGIN_LABEL = "loginLabel";
-  public static final String LINK_LOGIN = "linkLogin";
-  public static final String LINK_DESCRIPTION = "linkDescription";
+          formSearchFileRepeaterList.add(formSearchFileRepeater);
+        }
+      }
+    }
 
-  // Card Type constants
-  public static final String EDITORIAL_CARDS_TYPE = "editorialCards";
-  public static final String AWARDS_CARDS_TYPE = "awardsCards";
-  public static final String CENTER_CARDS_TYPE = "centerCards";
-  public static final String FUND_CARDS_TYPE = "fundCards";
-  public static final String LEFT_CARDS_TYPE = "leftCards";
-  public static final String ROW_CARDS_TYPE = "rowCards";
-  public static final String TEXT_CARDS_TYPE = "textCards";
-  public static final String CARD_MODE_DYNAMIC = "dynamic";
-  public static final String CARD_MODE_MANUAL = "manual";
+    return formSearchFileRepeaterList;
+  }
 
-	// Dynamic Fund Card Type constants
-	public static final String EQUALS = "=";
-	public static final String DATASOURCE = "datasource";
-	public static final String DROPDOWN_SELECTOR = "dropdownSelector";
-	public static final String MAIN_GROUP_LIST = "mainGroupList";
-	public static final String MAIN_GROUP_LIST_PATH = "/content/dam/cfs-winged/fpjson/mainGroup.json";
-	public static final String PRODUCTS_LIST = "productsList";
-	public static final String PRODUCTS_LIST_PATH = "/content/dam/cfs-winged/fpjson/products.json";
-	public static final String YEARS_LIST = "yearsList";
-	public static final String YEARS_LIST_PATH = "/content/dam/cfs-winged/fpjson/years.json";
-	public static final String END_POINT_LIST = "endPointList";
-	public static final String END_POINT_LIST_PATH = "/content/dam/cfs-winged/fpjson/enpoint.json";
+  /**
+   * Formats a Tag object as a FormSearchTag filter.
+   *
+   * @param tag The Tag object to format.
+   * @return The formatted FormSearchTag filter.
+   */
+  private FormSearchTag formatTagAsFilter(Tag tag) {
+    if (tag != null) {
+      return new FormSearchTag(tag.getTitle(), tag.getName());
+    }
 
-  // Configuration constans
-  public static final String READ_SERVICE = "readService";
+    return null;
+  }
 
-  public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd";
-  public static final String DATE_FORMAT_DD_MMMM_YYYY = "dd MMMM yyyy";
-  public static final String DATE_FORMAT_DD_MMM_YYYY = "dd MMM yyyy";
-  public static final String REFERENCE_TO_NAVIGATIONAL_TAB = "referenceToANavigationalTab";
-  public static final String CONTENT_FRAGMENT_MASTER = "/jcr:content/data/master";
-  public static final String ROOT_PATH = "/content/cfs-winged/au/en";
-  public static final String JCR_CONTENT = "jcr:content";
+  /**
+   * Formats a list of Tag objects as a list of FormSearchTag filters.
+   *
+   * @param tags The list of Tag objects to format.
+   * @return The formatted list of FormSearchTag filters.
+   */
+  private ArrayList<FormSearchTag> formatTagListAsFilterList(ArrayList<Tag> tags) {
+    ArrayList<FormSearchTag> filters = new ArrayList<>();
 
-  // Template Name constants
-  public static final String ARTICLE_TEMPLATE_NAME = "/conf/cfs-winged/settings/wcm/templates/article-page";
+    if (tags != null && tags.size() > 0) {
+      for (Tag tag : tags) {
+        FormSearchTag filter = this.formatTagAsFilter(tag);
+        filters.add(filter);
+      }
+    }
 
-  // Page Property constants
-  public static final String PUBLISH_DATE = "publishedDate";
-  public static final String READING_TIME = "readingTime";
-  public static final String ARTICLE_TAGS = "articleTags";
-  public static final String TAG = "tag";
-  public static final String PATH = "path";
-  public static final String AUTHOR_DETAILS = "authorDetails";
+    return filters;
+  }
 
-  public static final String ADVISER = "adviser";
-  public static final String MEMBER = "personal";
-  public static final String EMPLOYER = "employer";
-  public static final String ADVISER_SEARCH = "/content/cfs-winged/au/en/adviser/search-adviser.html";
-  public static final String MEMBER_SEARCH = "/content/cfs-winged/au/en/personal/search-personal.html";
-  public static final String EMPLOYER_SEARCH = "/content/cfs-winged/au/en/employer/search-employer.html";
-  public static final String QUERY_PARAM = "query";
-  
-  // Form constants
-  public static final String CATEGORY_FILTERS = "categoryFilters";
-  public static final String PRODUCT_TYPE_FILTERS = "productTypeFilters";
-  public static final String FORM_ITEMS = "formItems";
+  /**
+   * Resolves a Tag object from the given tag path.
+   *
+   * @param tagPath The path of the Tag to resolve.
+   * @return The resolved Tag object, or null if not found or if the resource resolver is not available.
+   */
+  private Tag resolveTag(String tagPath) {
+    if (resourceResolver != null) {
+      TagManager tagManager = resourceResolver.adaptTo(TagManager.class);
+      Tag tag = tagManager.resolve(tagPath);
+      return tag;
+    }
 
-  // Form Item constants
-  public static final String COUNT = "count";
-  public static final String ITEM_NAME = "itemName";
-  public static final String ITEM_DESCRIPTION = "itemDescription";
-  public static final String FORM_TYPE = "formType";
-  public static final String FORM_FILE = "formFile";
-  public static final String FORM_FILE_REPEATER = "formFileRepeater";
-  public static final String FORM_CATEGORIES = "formCategories";
-  public static final String PRODUCT_TYPE = "productType";
-  public static final String CONTACT_HEADING = "contactHeading";
-  public static final String CONTACT_DETAILS = "contactDetails";
-  public static final String PICKER_HEADING = "pickerHeading";
-  public static final String DOWNLOAD_CTA_TEXT = "downloadCtaText";
-  public static final String SHOW_DOCUMENT_ICON = "showDocumentIcon";
-  public static final String SHOW_HELP = "showHelp";
-  public static final String HELP_HEADING = "helpHeading";
-  public static final String HELP_TEXT = "helpText";
+    return null;
+  }
+
+  /**
+   * Resolves a list of Tag objects from the given array of tag paths.
+   *
+   * @param tagPaths The array of tag paths to resolve.
+   * @return The list of resolved Tag objects.
+   */
+  private ArrayList<Tag> resolveTagList(String[] tagPaths) {
+    ArrayList<Tag> tags = new ArrayList<>();
+
+    if (tagPaths != null && tagPaths.length > 0) {
+      for (String tagPath : tagPaths) {
+        Tag tag = this.resolveTag(tagPath);
+        tags.add(tag);
+      }
+    }
+
+    return tags;
+  }
+
+  /**
+   * Resolves the content fragment of the specified path and retrieves its properties.
+   *
+   * @param fragmentPath The path to the content fragment.
+   * @return The ValueMap object containing the properties of the content fragment, or null if not found or if the resource resolver is not available.
+   */
+  public ValueMap resolveContentFragment(String fragmentPath) {
+    if (resourceResolver != null) {
+      Resource fragmentResource = resourceResolver.getResource(fragmentPath + ApplicationConstants.CONTENT_FRAGMENT_MASTER);
+
+      if (Objects.nonNull(fragmentResource)) {
+        ValueMap properties = fragmentResource.getValueMap();
+        return properties;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Resolves the form content fragment and initializes the category filters, product type filters, and form items.
+   */
+  private void resolveFormContentFragment() {
+    if (this.formFragmentPath != null) {
+      ValueMap formProperties = resolveContentFragment(formFragmentPath);
+
+      if (!formProperties.isEmpty()) {
+        setCategoryFilters(formProperties.get(ApplicationConstants.CATEGORY_FILTERS, String[].class));
+        setProductTypeFilters(formProperties.get(ApplicationConstants.PRODUCT_TYPE_FILTERS, String[].class));
+        setFormItems(formProperties.get(ApplicationConstants.FORM_ITEMS, String[].class));
+      }
+    }
+  }
+
+  /**
+   * Resolves the content fragment of the specified form item path and creates a FormSearchItem object with its properties.
+   *
+   * @param formItemFragmentPath The path to the form item content fragment.
+   * @return The FormSearchItem object representing the form item.
+   */
+  private FormSearchItem resolveFormItemContentFragment(String formItemFragmentPath) {
+    ValueMap formItemProperties = resolveContentFragment(formItemFragmentPath);
+
+    if (formItemProperties == null || formItemProperties.isEmpty()) {
+      return null;
+    }
+
+    FormSearchItem formSearchItem = new FormSearchItem();
+    formSearchItem.setItemName(formItemProperties.get(ApplicationConstants.ITEM_NAME, String.class));
+    formSearchItem.setItemDescription(formItemProperties.get(ApplicationConstants.ITEM_DESCRIPTION, String.class));
+    formSearchItem.setFormType(formItemProperties.get(ApplicationConstants.FORM_TYPE, String.class));
+    formSearchItem.setContactHeading(formItemProperties.get(ApplicationConstants.CONTACT_HEADING, String.class));
+    formSearchItem.setContactDetails(formItemProperties.get(ApplicationConstants.CONTACT_DETAILS, String.class));
+    formSearchItem.setPickerHeading(formItemProperties.get(ApplicationConstants.PICKER_HEADING, String.class));
+    formSearchItem.setDownloadCtaText(formItemProperties.get(ApplicationConstants.DOWNLOAD_CTA_TEXT, String.class));
+    formSearchItem.setShowDocumentIcon(formItemProperties.get(ApplicationConstants.SHOW_DOCUMENT_ICON, Boolean.class));
+    formSearchItem.setShowHelp(formItemProperties.get(ApplicationConstants.SHOW_HELP, Boolean.class));
+    formSearchItem.setHelpHeading(formItemProperties.get(ApplicationConstants.HELP_HEADING, String.class));
+    formSearchItem.setHelpText(formItemProperties.get(ApplicationConstants.HELP_TEXT, String.class));
+
+    formSearchItem.setFormFile(
+      LinkUtil.getMappedURL(
+        formItemProperties.get(ApplicationConstants.FORM_FILE, String.class),
+        resourceResolver
+      )
+    );
+
+    formSearchItem.setFormFileRepeater(
+      this.formatSerialisedDataToFileRepeaterList(
+        formItemProperties.get(ApplicationConstants.FORM_FILE_REPEATER, String[].class)
+      )
+    );
+
+    formSearchItem.setFormCategories(
+      formatTagListAsFilterList(
+        resolveTagList(
+          formItemProperties.get(ApplicationConstants.FORM_CATEGORIES, String[].class)
+        )
+      )
+    );
+
+    formSearchItem.setProductType(
+      formatTagListAsFilterList(
+        resolveTagList(
+          formItemProperties.get(ApplicationConstants.PRODUCT_TYPE, String[].class)
+        )
+      )
+    );
+
+    return formSearchItem;
+  }
+
+  // Setters
+  public void setUuid() {
+    UUID uuidObj = UUID.randomUUID();
+    uuid = uuidObj.toString();
+  }
+  public void setCategoryFilters(String[] categoryFilterPaths) {
+    this.categoryFilters = formatTagListAsFilterList(
+        resolveTagList(categoryFilterPaths)
+    );
+  }
+  public void setProductTypeFilters(String[] productTypeFilterPaths) {
+    this.productTypeFilters = formatTagListAsFilterList(
+        resolveTagList(productTypeFilterPaths)
+    );
+  }
+  public void setFilters() {
+    ArrayList<FormSearchTaxonomy> newFilters = new ArrayList<>();
+
+    if (this.categoryFilters != null) {
+      newFilters.add(
+        new FormSearchTaxonomy(
+          "Category",
+          ApplicationConstants.FORM_CATEGORIES,
+          this.categoryFilters
+        )
+      );
+    }
+
+    if (this.productTypeFilters != null) {
+      newFilters.add(
+        new FormSearchTaxonomy(
+          "Product",
+          ApplicationConstants.PRODUCT_TYPE,
+          this.productTypeFilters
+        )
+      );
+    }
+
+    this.filters = newFilters;
+  }
+  public void setFormItems(String[] formItemPaths) {
+    ArrayList<FormSearchItem> items = new ArrayList<>();
+
+    if (formItemPaths != null && formItemPaths.length > 0) {
+      for (String formItemPath : formItemPaths) {
+        FormSearchItem formItem = resolveFormItemContentFragment(formItemPath);
+
+        if (formItem != null) {
+          items.add(formItem);
+        }
+      }
+    }
+
+    this.formItems = items;
+  }
+
+  // Getters
+  public String getUuid() {
+		return uuid;
+	}
+  public String getHeading() {
+    return heading;
+  }
+  public String getFormFragmentPath() {
+    return formFragmentPath;
+  }
+  public String getItemsPerPage() {
+    return itemsPerPage;
+  }
+  public ArrayList<FormSearchTaxonomy> getFilters() {
+    return filters;
+  }
+  public String getJsonPayload() {
+    Map<String, Object> formData = new HashMap<>();
+
+    if (formItems.size() > 0) {
+      formData.put(ApplicationConstants.ITEMS, formItems);
+      formData.put(ApplicationConstants.COUNT, formItems.size());
+      return ObjectUtils.objectToJsonString(formData);
+    }
+
+    return StringUtils.EMPTY;
+  }
 }
