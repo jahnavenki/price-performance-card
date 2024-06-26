@@ -8,12 +8,16 @@ import org.apache.sling.models.annotations.DefaultInjectionStrategy;
 import org.apache.sling.models.annotations.Model;
 import org.apache.sling.models.annotations.injectorspecific.OSGiService;
 import org.apache.sling.models.annotations.injectorspecific.ValueMapValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-@Model(adaptables = SlingHttpServletRequest.class,	adapters = DynamicFundCardModel.class,	defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
+@Model(adaptables = SlingHttpServletRequest.class, adapters = DynamicFundCardModel.class, defaultInjectionStrategy = DefaultInjectionStrategy.OPTIONAL)
 public class DynamicFundCardModel extends ButtonsModel {
+
+	private static final Logger LOG = LoggerFactory.getLogger(DynamicFundCardModel.class);
 
 	@Inject
 	private ResourceResolver resourceResolver;
@@ -62,10 +66,16 @@ public class DynamicFundCardModel extends ButtonsModel {
 
 	@PostConstruct
 	protected void init() {
-		companyCode = dynamicFundService.getCompanyCode();
-		api = dynamicFundService.getApi();
-		fundLinkBaseUrl = dynamicFundService.getFundLinkBaseUrl();
-
+		// Fetch and set values from DynamicFundService
+		if(dynamicFundService != null) {
+			try {
+				dynamicFundService.fetchAndSetValues(resourceResolver);
+			} catch(Exception e) {
+				LOG.error("Error initializing DynamicFundCardModel", e);
+			}
+		} else {
+			LOG.warn("DynamicFundService reference is null");
+		}
 	}
 
 	public String getLayout() {
@@ -108,20 +118,20 @@ public class DynamicFundCardModel extends ButtonsModel {
 		return year;
 	}
 
-	public String getCompanyCode() {
-		return companyCode;
-	}
-
-	public String getApi() {
-		return api;
-	}
-
 	public String getInception() {
 		return inception;
 	}
 
+	public String getCompanyCode() {
+		return dynamicFundService != null ? dynamicFundService.getCompanyCode() : null;
+	}
+
+	public String getApi() {
+		return dynamicFundService != null ? dynamicFundService.getApi() : null;
+	}
+
 	public String getFundLinkBaseUrl() {
-		return fundLinkBaseUrl;
+		return dynamicFundService != null ? dynamicFundService.getFundLinkBaseUrl() : null;
 	}
 
 }
