@@ -46,83 +46,83 @@ import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVL
 @Component(service = Servlet.class, property = {Constants.SERVICE_ID + EQUALS + SERVICE_NAME, SLING_SERVLET_RESOURCE_TYPES + EQUALS + RESOURCE_TYPE})
 public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
-    protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
-    protected static final String RESOURCE_TYPE = "/apps/cfs-winged/dynamicFund/dropdowns";
-    private static final long serialVersionUID = 4235730140092283425L;
-    private static final String TAG = DynamicFundDataSourceServlet.class.getSimpleName();
-    private static final Logger LOGGER = LoggerFactory.getLogger(DynamicFundDataSourceServlet.class);
+	protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
+	protected static final String RESOURCE_TYPE = "/apps/cfs-winged/dynamicFund/dropdowns";
+	private static final long serialVersionUID = 4235730140092283425L;
+	private static final String TAG = DynamicFundDataSourceServlet.class.getSimpleName();
+	private static final Logger LOGGER = LoggerFactory.getLogger(DynamicFundDataSourceServlet.class);
 
-    @Reference
-    private DynamicFundService dynamicFundService;
+	@Reference
+	private DynamicFundService dynamicFundService;
 
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
-        try {
-            ResourceResolver resourceResolver = request.getResourceResolver();
-            Resource currentResource = request.getResource();
+	@Override
+	protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response) {
+		try {
+			ResourceResolver resourceResolver = request.getResourceResolver();
+			Resource currentResource = request.getResource();
 
-            // Retrieve the mainGroup value from the node
-            String mainGroup = getMainGroupValue(currentResource);
-            if (mainGroup == null) {
-                LOGGER.error("mainGroup value is not found in the node");
-                return;
-            }
+			// Retrieve the mainGroup value from the node
+			String mainGroup = "SF";
+			if (mainGroup == null) {
+				LOGGER.error("mainGroup value is not found in the node");
+				return;
+			}
 
-            String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
-            Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
-            Asset asset = DamUtil.resolveToAsset(jsonResource);
-            Rendition originalAsset = Objects.requireNonNull(asset).getOriginal();
-            InputStream content = Objects.requireNonNull(originalAsset).adaptTo(InputStream.class);
-            StringBuilder jsonContent = new StringBuilder();
-            BufferedReader jsonReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(content), StandardCharsets.UTF_8));
-            String line;
-            while ((line = jsonReader.readLine()) != null) {
-                jsonContent.append(line);
-            }
-            JSONArray jsonArray = new JSONArray(jsonContent.toString());
+			String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
+			Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
+			Asset asset = DamUtil.resolveToAsset(jsonResource);
+			Rendition originalAsset = Objects.requireNonNull(asset).getOriginal();
+			InputStream content = Objects.requireNonNull(originalAsset).adaptTo(InputStream.class);
+			StringBuilder jsonContent = new StringBuilder();
+			BufferedReader jsonReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(content), StandardCharsets.UTF_8));
+			String line;
+			while ((line = jsonReader.readLine()) != null) {
+				jsonContent.append(line);
+			}
+			JSONArray jsonArray = new JSONArray(jsonContent.toString());
 
-            Map<String, String> data = new TreeMap<>();
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject product = jsonArray.getJSONObject(i);
-                if (mainGroup.equals(product.getString("mainGroup"))) {
-                    data.put(product.getString("text"), product.getString("value"));
-                }
-            }
+			Map<String, String> data = new TreeMap<>();
+			for (int i = 0; i < jsonArray.length(); i++) {
+				JSONObject product = jsonArray.getJSONObject(i);
+				if (mainGroup.equals(product.getString("mainGroup"))) {
+					data.put(product.getString("text"), product.getString("value"));
+				}
+			}
 
-            @SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
-                String dropValue = (String) o;
-                ValueMap vm = new ValueMapDecorator(new HashMap<>());
-                vm.put("text", dropValue);
-                vm.put("value", data.get(dropValue));
-                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-            }));
-            request.setAttribute(DataSource.class.getName(), ds);
-        } catch (IOException | JSONException e) {
-            LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
-        }
-    }
+			@SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
+				String dropValue = (String) o;
+				ValueMap vm = new ValueMapDecorator(new HashMap<>());
+				vm.put("text", dropValue);
+				vm.put("value", data.get(dropValue));
+				return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+			}));
+			request.setAttribute(DataSource.class.getName(), ds);
+		} catch (IOException | JSONException e) {
+			LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
+		}
+	}
 
-    private String getMainGroupValue(Resource currentResource) {
-        // Assuming the mainGroup property is stored at the same level as this resource
-        ValueMap properties = currentResource.getValueMap();
-        return properties.get("mainGroup", String.class);
-    }
+	private String getMainGroupValue(Resource currentResource) {
+		// Assuming the mainGroup property is stored at the same level as this resource
+		ValueMap properties = currentResource.getValueMap();
+		return properties.get("mainGroup", String.class);
+	}
 
-    private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
-        Resource jsonResource;
-        switch (dropdownSelector) {
-            case MAIN_GROUP_LIST:
-                jsonResource = resourceResolver.getResource(MAIN_GROUP_LIST_PATH);
-                break;
-            case PRODUCTS_LIST:
-                jsonResource = resourceResolver.getResource(PRODUCTS_LIST_PATH);
-                break;
-            case YEARS_LIST:
-                jsonResource = resourceResolver.getResource(YEARS_LIST_PATH);
-                break;
-            default:
-                throw new IllegalStateException("Unexpected value: " + dropdownSelector);
-        }
-        return jsonResource;
-    }
+	private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
+		Resource jsonResource;
+		switch (dropdownSelector) {
+			case MAIN_GROUP_LIST:
+				jsonResource = resourceResolver.getResource(MAIN_GROUP_LIST_PATH);
+				break;
+			case PRODUCTS_LIST:
+				jsonResource = resourceResolver.getResource(PRODUCTS_LIST_PATH);
+				break;
+			case YEARS_LIST:
+				jsonResource = resourceResolver.getResource(YEARS_LIST_PATH);
+				break;
+			default:
+				throw new IllegalStateException("Unexpected value: " + dropdownSelector);
+		}
+		return jsonResource;
+	}
 }
