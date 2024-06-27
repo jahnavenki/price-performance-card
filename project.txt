@@ -1,145 +1,125 @@
-[
-    {
-        "text" : "Super",
-        "value": "SF"
-    },
-    {
-        "text" : "Pension",
-        "value": "RF"
-    },
-    {
-        "text" : "Investments",
-        "value": "IF"
-    },
-     {
-        "text" : "Institutional & master trust",
-        "value": "WF"
-    }
-]
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-[
-    {
-        "text": "FirstChoice Wholesale Personal Super",
-        "value": "11",
-        "mainGroup": "SF"
-    },
-    {
-        "text": "FirstChoice Employer Super",
-        "value": "65",
-        "mainGroup": "RF"
-    },
-    {
-        "text": "FirstChoice Wholesale Pension",
-        "value": "51",
-        "mainGroup": "RF"
-    },
-    {
-        "text": "FirstChoice Wholesale Investments",
-        "value": "91",
-        "mainGroup": "IF"
-    },
-    {
-        "text": "FirstChoice Investments",
-        "value": "70",
-        "mainGroup": "IF"
-    },
-    {
-        "text": "Managed Investment Funds",
-        "value": "90",
-        "mainGroup": "IF"
-    },
-    {
-        "text": "Institutional & Master Trust",
-        "value": "91,73,120",
-        "mainGroup": "WF"
-    }
-]
+(function ($, $document) {
+    "use strict";
+
+    const contentTypeSelector = ".dropdownfield_contenttype";
+    const contentSubTypeSelector = ".dropdownfield_contentsubtype";
+    const contentSubTypeHiddenSelector = ".dropdownfield_contentsubtype--hidden";
+    const contentSubTypeDataSourceUri =
+        "/apps/aemlab/oneweb/concept/utils/dialog/contentsubytpe.json";
 
 
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-[
-    {
-        "text": "1 year",
-        "value": "oneYear"
-    },
-    {
-        "text": "2 year",
-        "value": "twoYears"
-    },
-    {
-        "text": "3 year",
-        "value": "threeYears"
-    },
-    {
-        "text": "4 year",
-        "value": "fourYearsn"
-    },
-    {
-        "text": "5 year",
-        "value": "fiveYears"
-    },
-    {
-        "text": "7 year",
-        "value": "sevenYears"
-    },
-    {
-        "text": "10 year",
-        "value": "tenYears"
-    },
-    {
-        "text": "Since inception",
-        "value": "sinceInception"
-    }
-]
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
-[
-    {
-        "text" : "companyCode",
-        "value": "001"
-    },
-    {
-        "text" : "api",
-        "value": "https://secure.colonialfirststate.com.au/fp/pricenperformance/products/funds/performance"
-    },
-    {
-        "text" : "fundLinkBaseUrl",
-        "value": "https://www.colonialfirststate.com.au"
-    }
-]
-
-/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup
-
-Node[NodeDelegate{tree=/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup: { jcr:primaryType = nt:unstructured, name = ./mainGroup, fieldLabel = Select Main Group, sling:resourceType = granite/ui/components/coral/foundation/form/select, fieldDescription = Select main group from the dropdown, datasource = { ... }}}]
-/content/cfs-winged/au/en/super/jcr:content/root/responsivegrid/container_438191099/dynamicfundcard
-
-
-FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[MergedResource [path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resources=[/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup]]]]
-/apps/cfs-winged/dynamicFund/dropdowns
-
-
-........................
-$(document).on("foundation-contentloaded", function() {
-    $(".main-group-dropdown").on("change", function() {
-        var mainGroup = $(this).val();
-        // Call servlet with updated mainGroup value
-        callServlet(mainGroup);
+    $document.on("foundation-contentloaded", function (e) {
+        setSubTypeDropdown(true);
     });
-});
 
-function callServlet(mainGroup) {
-    var servletUrl = "/apps/cfs-winged/dynamicFund/dropdowns";
-    $.ajax({
-        type: "GET",
-        url: servletUrl,
-        data: { mainGroup: mainGroup },
-        success: function(response) {
-            // Handle success response if needed
-            console.log("Servlet request successful");
-        },
-        error: function(xhr, status, error) {
-            // Handle error response if needed
-            console.error("Servlet request failed:", status, error);
+    $document.on("change", contentTypeSelector, function (e) {
+        setSubTypeDropdown(false);
+    });
+
+    function setSubTypeDropdown(preSelect) {
+        const contentType = document.querySelector(contentTypeSelector);
+        const contentSubType = document.querySelector(contentSubTypeSelector);
+
+        if (contentType && contentSubType) {
+            var url =contentSubTypeDataSourceUri +"?type=" +contentType.value;
+            $.get(url, function (data) {
+                updateSubTypeDropdownField(preSelect, data);
+            });
         }
-    });
-}
+    }
 
+    function updateSubTypeDropdownField(preSelect, data) {
+        const contentSubTypeDropdown = document.querySelector(contentSubTypeSelector);
+        const contentSubTypeDropdownValue = document.querySelector(contentSubTypeHiddenSelector).value;
+       
+        //  Remove existing items from dropdown
+        contentSubTypeDropdown.items.clear();
+
+        for (var i in data) {
+            contentSubTypeDropdown.items.add({
+                value: data[i],
+                content: { innerHTML: data[i] },
+                selected:
+                    preSelect && contentSubTypeDropdownValue === data[i] ? true : false,
+            });
+        }
+    }
+})($, $(document));
+
+
+
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
+package com.community.aemlab.oneweb.core.servlets.ds;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import org.apache.sling.api.SlingHttpServletRequest;
+import org.apache.sling.api.SlingHttpServletResponse;
+import org.apache.sling.api.resource.Resource;
+import org.apache.sling.api.resource.ResourceMetadata;
+import org.apache.sling.api.resource.ResourceResolver;
+import org.apache.sling.api.resource.ValueMap;
+import org.apache.sling.api.servlets.HttpConstants;
+import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
+import org.apache.sling.api.wrappers.ValueMapDecorator;
+import org.osgi.framework.Constants;
+import org.osgi.service.component.annotations.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.adobe.granite.ui.components.ds.DataSource;
+import com.adobe.granite.ui.components.ds.EmptyDataSource;
+import com.adobe.granite.ui.components.ds.SimpleDataSource;
+import com.adobe.granite.ui.components.ds.ValueMapResource;
+import com.day.cq.commons.jcr.JcrConstants;
+
+/**
+ * @author arunpatidar02
+ *
+ */
+@Component(service = Servlet.class, immediate = true, property = {
+        Constants.SERVICE_DESCRIPTION + "=Populating Coral Dropdown using datasource servlet",
+        "sling.servlet.resourceTypes=aemlab/oneweb/dialog/granite/components/select/datasource/content/type",
+        "sling.servlet.methods=" + HttpConstants.METHOD_GET })
+public class ContentTypeDropdownDSServlet extends SlingSafeMethodsServlet {
+
+    private static final long serialVersionUID = 1L;
+    private static final Logger Logger = LoggerFactory.getLogger(ContentTypeDropdownDSServlet.class);
+
+    @Override
+    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+
+            // set fallback
+            request.setAttribute(DataSource.class.getName(), EmptyDataSource.instance());
+            ResourceResolver resolver = request.getResourceResolver();
+            // Create an ArrayList to hold data
+            List<Resource> fakeResourceList = new ArrayList<>();
+            ValueMap vm = null;
+
+            String[] contentType = { "Page", "Asset", "XF"};
+
+            for (int i = 0; i < contentType.length; i++) {
+                vm = new ValueMapDecorator(new HashMap<>());
+                vm.put("value", contentType[i].trim().toLowerCase());
+                vm.put("text", contentType[i].trim());
+                fakeResourceList.add(new ValueMapResource(resolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm));
+            }
+
+            // Create a DataSource that is used to populate the drop-down control
+            DataSource ds = new SimpleDataSource(fakeResourceList.iterator());
+            request.setAttribute(DataSource.class.getName(), ds);
+        } catch (Exception e) {
+            Logger.error("Error in Getting Drop Down Values - {}", e.getMessage());
+        }
+    }
+
+}
