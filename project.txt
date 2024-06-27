@@ -123,3 +123,52 @@ public class ContentTypeDropdownDSServlet extends SlingSafeMethodsServlet {
     }
 
 }
+...........................................
+(function ($, $document) {
+    "use strict";
+
+    const mainGroupSelector = "coral-select[name='./mainGroup']";
+    const productsSelector = "coral-select[name='./product']";
+    const productsDataSourceUri = "/apps/cfs-winged/dynamicFund/dropdowns";
+
+    $document.on("foundation-contentloaded", function (e) {
+        setProductsDropdown(true);
+    });
+
+    $document.on("change", mainGroupSelector, function (e) {
+        setProductsDropdown(false);
+    });
+
+    function setProductsDropdown(preSelect) {
+        const mainGroup = document.querySelector(mainGroupSelector);
+        const products = document.querySelector(productsSelector);
+
+        if (mainGroup && products) {
+            var url = productsDataSourceUri + "?dropdownSelector=productsList&mainGroup=" + mainGroup.value;
+            $.get(url, function (data) {
+                updateProductsDropdownField(preSelect, data);
+            });
+        }
+    }
+
+    function updateProductsDropdownField(preSelect, data) {
+        const productsDropdown = document.querySelector(productsSelector);
+        const productsDropdownValue = productsDropdown.value; // Save the currently selected value
+
+        // Remove existing items from dropdown
+        while (productsDropdown.options.length > 0) {
+            productsDropdown.remove(0);
+        }
+
+        // Add new items to the dropdown
+        for (var i in data) {
+            var option = document.createElement("option");
+            option.value = data[i].value;
+            option.text = data[i].text;
+            if (preSelect && productsDropdownValue === data[i].value) {
+                option.selected = true;
+            }
+            productsDropdown.add(option);
+        }
+    }
+})($, $(document));
