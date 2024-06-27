@@ -111,3 +111,6 @@
 
 Node[NodeDelegate{tree=/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup: { jcr:primaryType = nt:unstructured, name = ./mainGroup, fieldLabel = Select Main Group, sling:resourceType = granite/ui/components/coral/foundation/form/select, fieldDescription = Select main group from the dropdown, datasource = { ... }}}]
 /content/cfs-winged/au/en/super/jcr:content/root/responsivegrid/container_438191099/dynamicfundcard
+
+
+FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[MergedResource [path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resources=[/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup]]]]
