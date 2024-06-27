@@ -1,5 +1,6 @@
 package au.com.cfs.winged.servlets;
 
+import au.com.cfs.winged.core.services.DynamicFundService;
 import com.adobe.granite.ui.components.ds.DataSource;
 import com.adobe.granite.ui.components.ds.SimpleDataSource;
 import com.adobe.granite.ui.components.ds.ValueMapResource;
@@ -19,6 +20,7 @@ import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
 import org.apache.sling.api.wrappers.ValueMapDecorator;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
@@ -37,8 +39,11 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import static au.com.cfs.winged.core.common.constants.ApplicationConstants.*;
+import static au.com.cfs.winged.servlets.DynamicFundDataSourceServlet.RESOURCE_TYPE;
+import static au.com.cfs.winged.servlets.DynamicFundDataSourceServlet.SERVICE_NAME;
+import static org.apache.sling.api.servlets.ServletResolverConstants.SLING_SERVLET_RESOURCE_TYPES;
 
-@Component(service = Servlet.class, property = {Constants.SERVICE_ID + "=" + DynamicFundDataSourceServlet.SERVICE_NAME, "sling.servlet.resourceTypes=" + DynamicFundDataSourceServlet.RESOURCE_TYPE})
+@Component(service = Servlet.class, property = {Constants.SERVICE_ID + EQUALS + SERVICE_NAME, SLING_SERVLET_RESOURCE_TYPES + EQUALS + RESOURCE_TYPE})
 public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 
     protected static final String SERVICE_NAME = "Dynamic Fund DataSource Servlet";
@@ -55,6 +60,14 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
         try {
             ResourceResolver resourceResolver = request.getResourceResolver();
             Resource currentResource = request.getResource();
+
+            // Retrieve the mainGroup value from the node
+            String mainGroup = getMainGroupValue(currentResource);
+            if (mainGroup == null) {
+                LOGGER.error("mainGroup value is not found in the node");
+                return;
+            }
+
             String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
             Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
             Asset asset = DamUtil.resolveToAsset(jsonResource);
@@ -68,44 +81,31 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
             }
             JSONArray jsonArray = new JSONArray(jsonContent.toString());
 
-            String mainGroup = request.getParameter("mainGroup");
-
-            // Filter products based on mainGroup selection
-            Map<String, String[]> mainGroupToProducts = new HashMap<>();
-            mainGroupToProducts.put("SF", new String[]{"FirstChoice Wholesale Personal Super", "FirstChoice Employer Super"});
-            mainGroupToProducts.put("RF", new String[]{"FirstChoice Wholesale Pension"});
-            mainGroupToProducts.put("IF", new String[]{"FirstChoice Wholesale Investments", "FirstChoice Investments", "Managed Investment Funds"});
-            mainGroupToProducts.put("WF", new String[]{"Institutional & Master Mrust"});
-
-            String[] filteredProducts = mainGroupToProducts.get(mainGroup);
-
-            if (filteredProducts != null) {
-                Map<String, String> data = new TreeMap<>();
-                for (String productText : filteredProducts) {
-                    for (int i = 0; i < jsonArray.length(); i++) {
-                        if (jsonArray.getJSONObject(i).getString("text").equals(productText)) {
-                            data.put(jsonArray.getJSONObject(i).getString("text"), jsonArray.getJSONObject(i).getString("value"));
-                            break;
-                        }
-                    }
+            Map<String, String> data = new TreeMap<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject product = jsonArray.getJSONObject(i);
+                if (mainGroup.equals(product.getString("mainGroup"))) {
+                    data.put(product.getString("text"), product.getString("value"));
                 }
-
-                @SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
-                    String dropValue = (String) o;
-                    ValueMap vm = new ValueMapDecorator(new HashMap<>());
-                    vm.put("text", dropValue);
-                    vm.put("value", data.get(dropValue));
-                    return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
-                }));
-                request.setAttribute(DataSource.class.getName(), ds);
             }
 
-            // Retain existing code for years dropdown
-            // Assuming the years dropdown processing is handled elsewhere or differently
-
+            @SuppressWarnings({"unchecked", "rawtypes"}) DataSource ds = new SimpleDataSource(new TransformIterator<>(data.keySet().iterator(), (Transformer) o -> {
+                String dropValue = (String) o;
+                ValueMap vm = new ValueMapDecorator(new HashMap<>());
+                vm.put("text", dropValue);
+                vm.put("value", data.get(dropValue));
+                return new ValueMapResource(resourceResolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm);
+            }));
+            request.setAttribute(DataSource.class.getName(), ds);
         } catch (IOException | JSONException e) {
             LOGGER.error("{}: exception occurred: {}", TAG, e.getMessage());
         }
+    }
+
+    private String getMainGroupValue(Resource currentResource) {
+        // Assuming the mainGroup property is stored at the same level as this resource
+        ValueMap properties = currentResource.getValueMap();
+        return properties.get("mainGroup", String.class);
     }
 
     private Resource getJsonResource(ResourceResolver resourceResolver, String dropdownSelector) {
