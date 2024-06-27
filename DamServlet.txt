@@ -61,13 +61,10 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 			ResourceResolver resourceResolver = request.getResourceResolver();
 			Resource currentResource = request.getResource();
 
-			// Retrieve the mainGroup value from the node
+			// Hardcode the mainGroup value for testing purposes
 			String mainGroup = "SF";
-			if (mainGroup == null) {
-				LOGGER.error("mainGroup value is not found in the node");
-				return;
-			}
 
+			// Get dropdownSelector from the datasource
 			String dropdownSelector = Objects.requireNonNull(currentResource.getChild(DATASOURCE)).getValueMap().get(DROPDOWN_SELECTOR, String.class);
 			Resource jsonResource = getJsonResource(resourceResolver, Objects.requireNonNull(dropdownSelector));
 			Asset asset = DamUtil.resolveToAsset(jsonResource);
@@ -82,10 +79,19 @@ public class DynamicFundDataSourceServlet extends SlingSafeMethodsServlet {
 			JSONArray jsonArray = new JSONArray(jsonContent.toString());
 
 			Map<String, String> data = new TreeMap<>();
-			for (int i = 0; i < jsonArray.length(); i++) {
-				JSONObject product = jsonArray.getJSONObject(i);
-				if (mainGroup.equals(product.getString("mainGroup"))) {
-					data.put(product.getString("text"), product.getString("value"));
+			if (dropdownSelector.equals(MAIN_GROUP_LIST) || dropdownSelector.equals(YEARS_LIST)) {
+				// For mainGroup and years, just populate the data directly
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject item = jsonArray.getJSONObject(i);
+					data.put(item.getString("text"), item.getString("value"));
+				}
+			} else if (dropdownSelector.equals(PRODUCTS_LIST)) {
+				// For products, filter based on mainGroup
+				for (int i = 0; i < jsonArray.length(); i++) {
+					JSONObject product = jsonArray.getJSONObject(i);
+					if (mainGroup.equals(product.getString("mainGroup"))) {
+						data.put(product.getString("text"), product.getString("value"));
+					}
 				}
 			}
 
