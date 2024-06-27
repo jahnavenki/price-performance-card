@@ -115,3 +115,31 @@ Node[NodeDelegate{tree=/apps/cfs-winged/global/cards/dynamicDialog/items/accordi
 
 FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[FilteringResourceWrapper, type=granite/ui/components/coral/foundation/form/select, path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resource=[MergedResource [path=/mnt/override/apps/cfs-winged/components/content/dynamicFundCard/cq:dialog/content/items/tabs/items/properties/items/columns/items/column/items/accordion/items/dynamicFund/items/mainGroup, resources=[/apps/cfs-winged/global/cards/dynamicDialog/items/accordion/items/dynamicFund/items/mainGroup]]]]
 /apps/cfs-winged/dynamicFund/dropdowns
+
+
+........................
+$(document).on("foundation-contentloaded", function() {
+    $(".main-group-dropdown").on("change", function() {
+        var mainGroup = $(this).val();
+        // Call servlet with updated mainGroup value
+        callServlet(mainGroup);
+    });
+});
+
+function callServlet(mainGroup) {
+    var servletUrl = "/apps/cfs-winged/dynamicFund/dropdowns";
+    $.ajax({
+        type: "GET",
+        url: servletUrl,
+        data: { mainGroup: mainGroup },
+        success: function(response) {
+            // Handle success response if needed
+            console.log("Servlet request successful");
+        },
+        error: function(xhr, status, error) {
+            // Handle error response if needed
+            console.error("Servlet request failed:", status, error);
+        }
+    });
+}
+
