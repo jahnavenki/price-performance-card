@@ -1,134 +1,8 @@
 (function ($, $document) {
     "use strict";
 
-    const contentTypeSelector = ".dropdownfield_contenttype";
-    const contentSubTypeSelector = ".dropdownfield_contentsubtype";
-    const contentSubTypeHiddenSelector = ".dropdownfield_contentsubtype--hidden";
-    const contentSubTypeDataSourceUri =
-        "/apps/aemlab/oneweb/concept/utils/dialog/contentsubytpe.json";
-
-
-    $document.on("foundation-contentloaded", function (e) {
-        setSubTypeDropdown(true);
-    });
-
-    $document.on("change", contentTypeSelector, function (e) {
-        setSubTypeDropdown(false);
-    });
-
-    function setSubTypeDropdown(preSelect) {
-        const contentType = document.querySelector(contentTypeSelector);
-        const contentSubType = document.querySelector(contentSubTypeSelector);
-
-        if (contentType && contentSubType) {
-            var url =contentSubTypeDataSourceUri +"?type=" +contentType.value;
-            $.get(url, function (data) {
-                updateSubTypeDropdownField(preSelect, data);
-            });
-        }
-    }
-
-    function updateSubTypeDropdownField(preSelect, data) {
-        const contentSubTypeDropdown = document.querySelector(contentSubTypeSelector);
-        const contentSubTypeDropdownValue = document.querySelector(contentSubTypeHiddenSelector).value;
-       
-        //  Remove existing items from dropdown
-        contentSubTypeDropdown.items.clear();
-
-        for (var i in data) {
-            contentSubTypeDropdown.items.add({
-                value: data[i],
-                content: { innerHTML: data[i] },
-                selected:
-                    preSelect && contentSubTypeDropdownValue === data[i] ? true : false,
-            });
-        }
-    }
-})($, $(document));
-
-
-
-
->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>.
-package com.community.aemlab.oneweb.core.servlets.ds;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-
-import javax.servlet.Servlet;
-import javax.servlet.ServletException;
-
-import org.apache.sling.api.SlingHttpServletRequest;
-import org.apache.sling.api.SlingHttpServletResponse;
-import org.apache.sling.api.resource.Resource;
-import org.apache.sling.api.resource.ResourceMetadata;
-import org.apache.sling.api.resource.ResourceResolver;
-import org.apache.sling.api.resource.ValueMap;
-import org.apache.sling.api.servlets.HttpConstants;
-import org.apache.sling.api.servlets.SlingSafeMethodsServlet;
-import org.apache.sling.api.wrappers.ValueMapDecorator;
-import org.osgi.framework.Constants;
-import org.osgi.service.component.annotations.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.adobe.granite.ui.components.ds.DataSource;
-import com.adobe.granite.ui.components.ds.EmptyDataSource;
-import com.adobe.granite.ui.components.ds.SimpleDataSource;
-import com.adobe.granite.ui.components.ds.ValueMapResource;
-import com.day.cq.commons.jcr.JcrConstants;
-
-/**
- * @author arunpatidar02
- *
- */
-@Component(service = Servlet.class, immediate = true, property = {
-        Constants.SERVICE_DESCRIPTION + "=Populating Coral Dropdown using datasource servlet",
-        "sling.servlet.resourceTypes=aemlab/oneweb/dialog/granite/components/select/datasource/content/type",
-        "sling.servlet.methods=" + HttpConstants.METHOD_GET })
-public class ContentTypeDropdownDSServlet extends SlingSafeMethodsServlet {
-
-    private static final long serialVersionUID = 1L;
-    private static final Logger Logger = LoggerFactory.getLogger(ContentTypeDropdownDSServlet.class);
-
-    @Override
-    protected void doGet(SlingHttpServletRequest request, SlingHttpServletResponse response)
-            throws ServletException, IOException {
-        try {
-
-            // set fallback
-            request.setAttribute(DataSource.class.getName(), EmptyDataSource.instance());
-            ResourceResolver resolver = request.getResourceResolver();
-            // Create an ArrayList to hold data
-            List<Resource> fakeResourceList = new ArrayList<>();
-            ValueMap vm = null;
-
-            String[] contentType = { "Page", "Asset", "XF"};
-
-            for (int i = 0; i < contentType.length; i++) {
-                vm = new ValueMapDecorator(new HashMap<>());
-                vm.put("value", contentType[i].trim().toLowerCase());
-                vm.put("text", contentType[i].trim());
-                fakeResourceList.add(new ValueMapResource(resolver, new ResourceMetadata(), JcrConstants.NT_UNSTRUCTURED, vm));
-            }
-
-            // Create a DataSource that is used to populate the drop-down control
-            DataSource ds = new SimpleDataSource(fakeResourceList.iterator());
-            request.setAttribute(DataSource.class.getName(), ds);
-        } catch (Exception e) {
-            Logger.error("Error in Getting Drop Down Values - {}", e.getMessage());
-        }
-    }
-
-}
-...........................................
-(function ($, $document) {
-    "use strict";
-
-    const mainGroupSelector = "coral-select[name='./mainGroup']";
-    const productsSelector = "coral-select[name='./product']";
+    const mainGroupSelector = ".dropdownfield_mainGroup";
+    const productsSelector = ".dropdownfield_products";
     const productsDataSourceUri = "/apps/cfs-winged/dynamicFund/dropdowns";
 
     $document.on("foundation-contentloaded", function (e) {
@@ -144,7 +18,7 @@ public class ContentTypeDropdownDSServlet extends SlingSafeMethodsServlet {
         const products = document.querySelector(productsSelector);
 
         if (mainGroup && products) {
-            var url = productsDataSourceUri + "?dropdownSelector=productsList&mainGroup=" + mainGroup.value;
+            var url = productsDataSourceUri + "?mainGroup=" + mainGroup.value + "&dropdownSelector=productsList";
             $.get(url, function (data) {
                 updateProductsDropdownField(preSelect, data);
             });
@@ -153,22 +27,53 @@ public class ContentTypeDropdownDSServlet extends SlingSafeMethodsServlet {
 
     function updateProductsDropdownField(preSelect, data) {
         const productsDropdown = document.querySelector(productsSelector);
-        const productsDropdownValue = productsDropdown.value; // Save the currently selected value
 
         // Remove existing items from dropdown
-        while (productsDropdown.options.length > 0) {
-            productsDropdown.remove(0);
+        while (productsDropdown.firstChild) {
+            productsDropdown.removeChild(productsDropdown.firstChild);
         }
 
         // Add new items to the dropdown
-        for (var i in data) {
-            var option = document.createElement("option");
-            option.value = data[i].value;
-            option.text = data[i].text;
-            if (preSelect && productsDropdownValue === data[i].value) {
-                option.selected = true;
-            }
-            productsDropdown.add(option);
+        data.forEach(function (item) {
+            let option = document.createElement("coral-select-item");
+            option.value = item.value;
+            option.innerHTML = item.text;
+            productsDropdown.appendChild(option);
+        });
+
+        if (preSelect) {
+            productsDropdown.value = document.querySelector('.dropdownfield_products_hidden').value;
         }
     }
 })($, $(document));
+.....................................
+<mainGroup
+    jcr:primaryType="nt:unstructured"
+    sling:resourceType="granite/ui/components/coral/foundation/form/select"
+    fieldDescription="Select main group from the dropdown"
+    fieldLabel="Select Main Group"
+    granite:class="dropdownfield_mainGroup"
+    name="./mainGroup">
+    <datasource
+        jcr:primaryType="nt:unstructured"
+        sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
+        dropdownSelector="mainGroupList"/>
+</mainGroup>
+<products
+    jcr:primaryType="nt:unstructured"
+    sling:resourceType="granite/ui/components/coral/foundation/form/select"
+    fieldDescription="Select product from the dropdown"
+    fieldLabel="Select Product"
+    granite:class="dropdownfield_products"
+    name="./product">
+    <datasource
+        jcr:primaryType="nt:unstructured"
+        sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
+        dropdownSelector="productsList"/>
+</products>
+<products-hidden
+    jcr:primaryType="nt:unstructured"
+    sling:resourceType="granite/ui/components/coral/foundation/form/hidden"
+    disabled="{Boolean}true"
+    name="./product"
+    granite:class="dropdownfield_products_hidden"/>
