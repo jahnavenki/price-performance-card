@@ -77,3 +77,59 @@
     disabled="{Boolean}true"
     name="./product"
     granite:class="dropdownfield_products_hidden"/>
+////////////////////////////////////////
+(function ($, $document) {
+    "use strict";
+
+    const mainGroupSelector = ".dropdownfield_mainGroup";
+    const productsSelector = ".dropdownfield_products";
+    const productDataSourceUri = "/apps/cfs-winged/dynamicFund/dropdowns";
+
+    $document.on("foundation-contentloaded", function () {
+        console.log("Foundation content loaded");
+
+        var mainGroupDropdown = $(mainGroupSelector);
+        var productsDropdown = $(productsSelector);
+
+        if (mainGroupDropdown.length && productsDropdown.length) {
+            console.log("MainGroup and Products dropdowns found");
+
+            mainGroupDropdown.on("change", function () {
+                var selectedMainGroup = $(this).val();
+                console.log("MainGroup changed to: ", selectedMainGroup);
+
+                // Make the AJAX call to fetch products based on the selected mainGroup
+                $.ajax({
+                    url: productDataSourceUri,
+                    method: "GET",
+                    data: {
+                        mainGroup: selectedMainGroup
+                    },
+                    success: function (response) {
+                        console.log("Products fetched successfully: ", response);
+
+                        // Clear existing options
+                        productsDropdown.empty();
+
+                        // Populate the products dropdown
+                        response.forEach(function (product) {
+                            var option = $("<coral-select-item>")
+                                .attr("value", product.value)
+                                .text(product.text);
+                            productsDropdown.append(option);
+                        });
+
+                        // Trigger change to update the select dropdown
+                        productsDropdown.trigger("change");
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error fetching products: ", error);
+                    }
+                });
+            });
+        } else {
+            console.error("MainGroup or Products dropdowns not found");
+        }
+    });
+})(Granite.$, $(document));
+
