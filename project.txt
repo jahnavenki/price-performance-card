@@ -1,135 +1,24 @@
-(function ($, $document) {
-    "use strict";
+"To set up the latest AEM as a Cloud Service Forms add-on package, follow these steps:
 
-    const mainGroupSelector = ".dropdownfield_mainGroup";
-    const productsSelector = ".dropdownfield_products";
-    const productsDataSourceUri = "/apps/cfs-winged/dynamicFund/dropdowns";
+Download and Unzip the Package:
+Visit the Adobe Software Distribution Platform and download the latest AEM Forms add-on package in .far format. Unzip the downloaded file to extract its contents.
 
-    $document.on("foundation-contentloaded", function (e) {
-        setProductsDropdown(true);
-    });
+Prepare the Installation Directory:
+Navigate to your AEM SDK quickstart directory. Create a new folder named install if it doesn't already exist.
 
-    $document.on("change", mainGroupSelector, function (e) {
-        setProductsDropdown(false);
-    });
+bash
+Copy code
+cd /path/to/aem-sdk/quickstart
+mkdir install
+Move the Package:
+Copy or move the extracted .far file into the newly created install folder.
 
-    function setProductsDropdown(preSelect) {
-        const mainGroup = document.querySelector(mainGroupSelector);
-        const products = document.querySelector(productsSelector);
+bash
+Copy code
+cp /path/to/downloaded/forms-addon-package.far /path/to/aem-sdk/quickstart/install/
+Start AEM Instances:
+Launch your AEM instances using the appropriate command for your environment. Typically, this involves executing the AEM jar file.
 
-        if (mainGroup && products) {
-            var url = productsDataSourceUri + "?mainGroup=" + mainGroup.value + "&dropdownSelector=productsList";
-            $.get(url, function (data) {
-                updateProductsDropdownField(preSelect, data);
-            });
-        }
-    }
-
-    function updateProductsDropdownField(preSelect, data) {
-        const productsDropdown = document.querySelector(productsSelector);
-
-        // Remove existing items from dropdown
-        while (productsDropdown.firstChild) {
-            productsDropdown.removeChild(productsDropdown.firstChild);
-        }
-
-        // Add new items to the dropdown
-        data.forEach(function (item) {
-            let option = document.createElement("coral-select-item");
-            option.value = item.value;
-            option.innerHTML = item.text;
-            productsDropdown.appendChild(option);
-        });
-
-        if (preSelect) {
-            productsDropdown.value = document.querySelector('.dropdownfield_products_hidden').value;
-        }
-    }
-})($, $(document));
-.....................................
-<mainGroup
-    jcr:primaryType="nt:unstructured"
-    sling:resourceType="granite/ui/components/coral/foundation/form/select"
-    fieldDescription="Select main group from the dropdown"
-    fieldLabel="Select Main Group"
-    granite:class="dropdownfield_mainGroup"
-    name="./mainGroup">
-    <datasource
-        jcr:primaryType="nt:unstructured"
-        sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-        dropdownSelector="mainGroupList"/>
-</mainGroup>
-<products
-    jcr:primaryType="nt:unstructured"
-    sling:resourceType="granite/ui/components/coral/foundation/form/select"
-    fieldDescription="Select product from the dropdown"
-    fieldLabel="Select Product"
-    granite:class="dropdownfield_products"
-    name="./product">
-    <datasource
-        jcr:primaryType="nt:unstructured"
-        sling:resourceType="/apps/cfs-winged/dynamicFund/dropdowns"
-        dropdownSelector="productsList"/>
-</products>
-<products-hidden
-    jcr:primaryType="nt:unstructured"
-    sling:resourceType="granite/ui/components/coral/foundation/form/hidden"
-    disabled="{Boolean}true"
-    name="./product"
-    granite:class="dropdownfield_products_hidden"/>
-////////////////////////////////////////
-(function ($, $document) {
-    "use strict";
-
-    const mainGroupSelector = ".dropdownfield_mainGroup";
-    const productsSelector = ".dropdownfield_products";
-    const productDataSourceUri = "/apps/cfs-winged/dynamicFund/dropdowns";
-
-    $document.on("foundation-contentloaded", function () {
-        console.log("Foundation content loaded");
-
-        var mainGroupDropdown = $(mainGroupSelector);
-        var productsDropdown = $(productsSelector);
-
-        if (mainGroupDropdown.length && productsDropdown.length) {
-            console.log("MainGroup and Products dropdowns found");
-
-            mainGroupDropdown.on("change", function () {
-                var selectedMainGroup = $(this).val();
-                console.log("MainGroup changed to: ", selectedMainGroup);
-
-                // Make the AJAX call to fetch products based on the selected mainGroup
-                $.ajax({
-                    url: productDataSourceUri,
-                    method: "GET",
-                    data: {
-                        mainGroup: selectedMainGroup
-                    },
-                    success: function (response) {
-                        console.log("Products fetched successfully: ", response);
-
-                        // Clear existing options
-                        productsDropdown.empty();
-
-                        // Populate the products dropdown
-                        response.forEach(function (product) {
-                            var option = $("<coral-select-item>")
-                                .attr("value", product.value)
-                                .text(product.text);
-                            productsDropdown.append(option);
-                        });
-
-                        // Trigger change to update the select dropdown
-                        productsDropdown.trigger("change");
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error fetching products: ", error);
-                    }
-                });
-            });
-        } else {
-            console.error("MainGroup or Products dropdowns not found");
-        }
-    });
-})(Granite.$, $(document));
-
+bash
+Copy code
+java -jar aem-sdk-quickstart.jar
